@@ -1,0 +1,28 @@
+{
+  "data": {
+    "item": {
+      "title": "标题",
+      "content": "内容"
+    }
+  },
+  "layout": {
+    "children": [
+      {
+        // 注意这里只支持这几个属性，诸如 type, vars 等这些属性不能使用
+        "@import": "foo", // 引用 ./foo.mist 组件
+        "params": { // 组件入参
+          "title": "${item.title}"
+        },
+        "children": [
+          {
+            "slot": "content", // 放入的插槽名称，未指定时，放入默认插槽
+            "type": "text",
+            "style": {
+              "text": "${item.content}" // 请注意在插槽中使用的变量名，可能会被组件内部同名变量覆盖
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

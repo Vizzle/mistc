@@ -1,0 +1,30 @@
+{
+  "name": "mistc",
+  "version": "1.0.0",
+  "description": "compiler for mist templates",
+  "main": "out/index.js",
+  "types": "out/index.d.ts",
+  "files": [
+    "/out",
+    "/bin"
+  ],
+  "bin": {
+    "mistc": "./bin/mistc"
+  },
+  "scripts": {
+    "test": "mocha",
+    "prepublish": "tsc"
+  },
+  "author": "Sleen",
+  "license": "ISC",
+  "dependencies": {
+    "fs-extra": "^8.1.0",
+    "jsonc-parser": "^2.1.1"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^8.0.0",
+    "@types/mocha": "^5.2.7",
+    "@types/node": "^12.7.12",
+    "mocha": "^6.2.1"
+  }
+}

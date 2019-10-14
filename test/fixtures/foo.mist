@@ -1,0 +1,37 @@
+{
+  // 入参定义，可选，用于编译检查和插件提示
+  "params": {
+    "title": {
+      "type": "string",
+      "description": "标题"
+    }
+  },
+  // 组件布局结构，与普通模板写法基本一致。暂时只支持一个根节点
+  "layout": {
+    "style": {
+      "direction": "vertical"
+    },
+    "children": [
+      {
+        "type": "text",
+        "style": {
+          "text": "${title}", // 使用传入的参数
+          "font-size": 18
+        }
+      },
+      {
+        // 定义插槽，与小程序的插槽类似。由于是编译期替换，暂不支持 slot-scope
+        "type": "slot",
+        "name": "content", // 插槽名称，可选
+        "children": [ // 插槽默认内容，外部未传入插槽内容时使用
+          {
+            "type": "text",
+            "style": {
+              "text": "content"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
