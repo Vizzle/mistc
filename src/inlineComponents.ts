@@ -34,6 +34,13 @@ ${errors.map(e => `(${e.offset}:${e.length}) ${jsonc.printParseErrorCode(e.error
 }
 
 async function visitNode(node: any, context: Context) {
+  const children = node.children
+  if (children instanceof Array) {
+    for (const child of children) {
+      await visitNode(child, context)
+    }
+  }
+
   const $import = node['@import']
   if ($import) {
     let componentPath = path.resolve(path.dirname(context.file), $import)
@@ -55,11 +62,6 @@ async function visitNode(node: any, context: Context) {
     })
 
     replaceComponent(node, component)
-  }
-  else if (node.children instanceof Array) {
-    for (const child of node.children) {
-      await visitNode(child, context)
-    }
   }
 }
 
