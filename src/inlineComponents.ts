@@ -41,11 +41,11 @@ async function visitNode(node: any, context: Context) {
       componentPath += '.mist'
     }
     if (!fs.existsSync(componentPath)) {
-      throw `找不到组件 ${$import}`
+      throw new Error(`找不到组件 ${$import}`)
     }
 
     if (context.stack.indexOf(componentPath) >= 0) {
-      throw `不允许组件循环引用 ${$import}`
+      throw new Error(`不允许组件循环引用 ${$import}`)
     }
 
     const component = await inlineComponents(componentPath, {
