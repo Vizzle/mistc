@@ -18,7 +18,7 @@ function printHelp() {
 Mist 模板编译工具
 
 Usage:
-  kobex [options] file
+  mistc [options] file
 
 Options:
   -o,--output <file>    输出到指定文件

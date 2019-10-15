@@ -16,6 +16,9 @@
     "prepublish": "tsc"
   },
   "author": "Sleen",
+  "repository": {
+    "url": "https://github.com/Vizzle/mistc"
+  },
   "license": "ISC",
   "dependencies": {
     "fs-extra": "^8.1.0",
