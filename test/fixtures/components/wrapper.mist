@@ -1,0 +1,21 @@
+{
+  "params": {
+    "title": {
+      "type": "string",
+      "description": "按钮文字"
+    }
+  },
+  "layout": {
+    "style": {
+      "padding": 10,
+      "font-size": 17,
+      "background-color": "#99f",
+      "color": "white"
+    },
+    "children": [
+      {
+        "type": "slot"
+      }
+    ]
+  }
+}

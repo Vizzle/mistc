@@ -1,0 +1,17 @@
+{
+  "layout": {
+    "@import": "components/repeat",
+    "children": [
+      {
+        "type": "text",
+        "style": {
+          "fixed": true,
+          "text": "Text",
+          "font-size": 30,
+          "alignment": "center",
+          "color": "red"
+        }
+      }
+    ]
+  }
+}

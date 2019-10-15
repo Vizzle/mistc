@@ -1,0 +1,10 @@
+{
+  "layout": {
+    "@import": "components/wrapper",
+    "children": [
+      {
+        "@import": "components/button"
+      }
+    ]
+  }
+}

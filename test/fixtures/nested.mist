@@ -1,0 +1,8 @@
+{
+  "layout": {
+    "@import": "components/bar",
+    "params": {
+      "title": "test"
+    }
+  }
+}

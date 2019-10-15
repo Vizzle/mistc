@@ -1,0 +1,25 @@
+{
+  "layout": {
+    "vars": {
+      "title": "test"
+    },
+    "style": {
+      "direction": "vertical"
+    },
+    "children": [
+      {
+        "type": "text",
+        "style": {
+          "text": "${title}",
+          "font-size": 18
+        }
+      },
+      {
+        "type": "text",
+        "style": {
+          "text": "content"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "layout": {
+    "children": [
+      {
+        "@import": "components/a",
+        "params": {
+          "title": "test"
+        }
+      }
+    ]
+  }
+}

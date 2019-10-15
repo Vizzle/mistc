@@ -1,0 +1,19 @@
+{
+  "params": {
+    "title": {
+      "type": "string",
+      "description": "按钮文字"
+    }
+  },
+  "layout": {
+    "type": "text",
+    "style": {
+      "text": "${title ?: '按钮'}",
+      "padding": 6,
+      "font-size": 17,
+      "background-color": "#ff5900",
+      "color": "white",
+      "corner-radius": 3
+    }
+  }
+}

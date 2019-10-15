@@ -1,0 +1,51 @@
+{
+  "layout": {
+    "style": {
+      "spacing": 10,
+      "padding": 10
+    },
+    "children": [
+      {
+        "style": {
+          "width": 100,
+          "height": 100,
+          "border-width": 2,
+          "border-color": "blue"
+        },
+        "children": [
+          {
+            "type": "text",
+            "style": {
+              "fixed": true,
+              "text": "Text",
+              "font-size": 30,
+              "alignment": "center",
+              "color": "red"
+            }
+          }
+        ]
+      },
+      {
+        "style": {
+          "width": 100,
+          "height": 100,
+          "corner-radius": 50,
+          "clip": true,
+          "background-color": "#4f77"
+        },
+        "children": [
+          {
+            "type": "text",
+            "style": {
+              "fixed": true,
+              "text": "Text",
+              "font-size": 30,
+              "alignment": "center",
+              "color": "red"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
