@@ -1,15 +1,17 @@
 import * as fs from 'fs-extra'
 import * as path from 'path'
+import request from 'request'
 
 import { compile } from "."
 
-const { version } = require('../package.json')
+const { name, version } = require('../package.json')
 
 interface Options {
   minify?: boolean
   output?: string
   file?: string
   version?: boolean
+  checkUpdate?: boolean
   help?: boolean
 }
 
@@ -23,6 +25,7 @@ Usage:
 Options:
   -o,--output <file>    输出到指定文件
   -m,--minify           是否进行最小化
+  -u,--check-update     检查更新，输出 JSON 字符串，属性有 hasUpdate, currentVersion, newVersion
   -v,--version          输出版本号
   -h,--help             显示帮助
 `)
@@ -32,6 +35,28 @@ function printVersion() {
   console.log(version)
 }
 
+function checkUpdate() {
+  const pkgUrl = `https://registry.npmjs.org/${name}/latest`
+  request(pkgUrl, (err, res, body) => {
+    const info = JSON.parse(body)
+    let result: any
+    if (info.version !== version) {
+      result = {
+        hasUpdate: true,
+        currentVersion: version,
+        newVersion: info.version,
+      }
+    }
+    else {
+      result = {
+        hasUpdate: false,
+      }
+    }
+
+    console.log(JSON.stringify(result, null, 2))
+  })
+}
+
 function parseArgs() {
   const argv = process.argv
   const options: Options = {}
@@ -39,7 +64,8 @@ function parseArgs() {
   for (let i = 2; i < process.argv.length; i++) {
     const arg = process.argv[i]
     switch (arg) {
-      case '-o': {
+      case '-o':
+      case '--output': {
         i++;
         const file = argv[i]
         if (!file) {
@@ -49,15 +75,23 @@ function parseArgs() {
         options.output = file
         break;
       }
-      case '-h': {
+      case '-h':
+      case '--help': {
         options.help = true
         break;
       }
-      case '-v': {
+      case '-v':
+      case '--version': {
         options.version = true
         break;
       }
-      case '-m': {
+      case '-u':
+      case '--check-update': {
+        options.checkUpdate = true
+        break;
+      }
+      case '-m':
+      case '--minify': {
         options.minify = true
         break;
       }
@@ -90,6 +124,9 @@ async function main() {
   const options = parseArgs()
   if (options.help) {
     printHelp()
+  }
+  else if (options.checkUpdate) {
+    checkUpdate()
   }
   else if (options.version) {
     printVersion()
