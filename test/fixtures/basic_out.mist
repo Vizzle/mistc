@@ -9,7 +9,8 @@
     "children": [
       {
         "vars": {
-          "title": "${item.title}"
+          "title": "${item.title}",
+          "content": "默认内容"
         },
         "style": {
           "direction": "vertical"

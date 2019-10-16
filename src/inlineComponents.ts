@@ -79,22 +79,13 @@ function replaceComponent(node: any, component: any) {
     delete node[key]
   }
 
+  const componentParams = component.params
+
   // 拷贝一份节点信息，因为后面会作修改
   component = JSON.parse(JSON.stringify(component.layout))
 
-  if (params) {
-    if (component.vars) {
-      if (component.vars instanceof Array) {
-        component.vars = [params, ...component.vars]
-      }
-      else {
-        component.vars = [params, component.vars]
-      }
-    }
-    else {
-      pushFront(component, 'vars', params)
-    }
-  }
+  // params 转换为 vars（也是由于这个原因，目前组件只能有一个根节点）
+  handleParams(params, component, componentParams)
 
   // 从 children 中解析出要插入组件的插槽 map
   const slotsMap: any = {}
@@ -115,6 +106,39 @@ function replaceComponent(node: any, component: any) {
   // 把替换完成的组件节点赋值回来
   for (const key in component) {
     node[key] = component[key]
+  }
+}
+
+function handleParams(params: any, component: any, componentParams: any) {
+  // 把组件中定义的参数默认值合并到入参中
+  if (componentParams) {
+    params = params || {}
+
+    for (const key in componentParams) {
+      const defaultValue = componentParams[key].default
+      if (defaultValue !== undefined && params[key] === undefined) {
+        params[key] = defaultValue
+      }
+    }
+
+    if (Object.keys(params).length === 0) {
+      params = undefined
+    }
+  }
+
+  // 合并组件根节点的 vars
+  if (params) {
+    if (component.vars) {
+      if (component.vars instanceof Array) {
+        component.vars = [params, ...component.vars]
+      }
+      else {
+        component.vars = [params, component.vars]
+      }
+    }
+    else {
+      pushFront(component, 'vars', params)
+    }
   }
 }
 

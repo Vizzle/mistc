@@ -1,8 +1,13 @@
 {
   "layout": {
-    "vars": {
-      "title": "test"
-    },
+    "vars": [
+      {
+        "title": "test"
+      },
+      {
+        "content": "默认内容"
+      }
+    ],
     "style": {
       "direction": "vertical"
     },
@@ -17,7 +22,7 @@
       {
         "type": "text",
         "style": {
-          "text": "content"
+          "text": "${content}"
         }
       }
     ]

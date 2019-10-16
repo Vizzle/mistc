@@ -4,6 +4,10 @@
     "title": {
       "type": "string",
       "description": "标题"
+    },
+    "content": {
+      "type": "string",
+      "default": "默认内容"
     }
   },
   // 组件布局结构，与普通模板写法基本一致。暂时只支持一个根节点
@@ -27,7 +31,7 @@
           {
             "type": "text",
             "style": {
-              "text": "content"
+              "text": "${content}"
             }
           }
         ]
