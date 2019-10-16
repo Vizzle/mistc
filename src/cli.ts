@@ -69,8 +69,7 @@ function parseArgs() {
         i++;
         const file = argv[i]
         if (!file) {
-          console.warn('请指定输出文件名')
-          continue
+          throw new Error('请指定输出文件名')
         }
         options.output = file
         break;
@@ -97,13 +96,11 @@ function parseArgs() {
       }
       default: {
         if (arg[0] === '-') {
-          console.warn(`不支持的选项 \`${arg}\``)
-          continue
+          throw new Error(`不支持的选项 \`${arg}\``)
         }
 
         if (options.file) {
-          console.warn(`只能编译一个文件`)
-          continue
+          throw new Error(`只能编译一个文件`)
         }
 
         options.file = arg
@@ -135,29 +132,32 @@ async function main() {
     console.error('请指定要编译的文件')
   }
   else {
-    try {
-      const cwd = process.cwd()
-      const inputFile = path.resolve(cwd, options.file)
-      const result = await compile(inputFile, { minify: options.minify })
-      if (options.output) {
-        const outputFile = path.resolve(cwd, options.output)
-        await fs.ensureFile(outputFile)
-        await fs.writeFile(outputFile, result)
-        console.log('编译成功，输出文件：' + outputFile)
-      }
-      else {
-        console.log(result)
-      }
+    const cwd = process.cwd()
+    const inputFile = path.resolve(cwd, options.file)
+    const result = await compile(inputFile, { minify: options.minify })
+    if (options.output) {
+      const outputFile = path.resolve(cwd, options.output)
+      await fs.ensureFile(outputFile)
+      await fs.writeFile(outputFile, result)
+      console.log('编译成功，输出文件：' + outputFile)
     }
-    catch (e) {
-      if (e instanceof Error) {
-        console.error(e.message)
-      }
-      else {
-        console.error(e)
-      }
+    else {
+      console.log(result)
     }
   }
 }
+
+function handleException(e: any) {
+  if (e instanceof Error) {
+    console.error(e.message)
+  }
+  else {
+    console.error(e)
+  }
+  process.exit(1)
+}
+
+process.on('uncaughtException', handleException)
+process.on('unhandledRejection', handleException)
 
 main()
