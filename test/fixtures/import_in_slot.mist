@@ -1,9 +1,25 @@
 {
   "layout": {
-    "@import": "components/wrapper",
+    "style": {
+      "direction": "vertical"
+    },
     "children": [
       {
-        "@import": "components/button"
+        "@import": "components/wrapper",
+        "children": [
+          {
+            "@import": "components/button"
+          }
+        ]
+      },
+      {
+        "@import": "components/c",
+        "children": [
+          {
+            "slot": "slot1",
+            "@import": "components/button"
+          }
+        ]
       }
     ]
   }

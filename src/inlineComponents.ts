@@ -34,14 +34,20 @@ ${errors.map(e => `(${e.offset}:${e.length}) ${jsonc.printParseErrorCode(e.error
 }
 
 async function visitNode(node: any, context: Context) {
+  const $import = node['@import']
   const children = node.children
   if (children instanceof Array) {
     for (const child of children) {
+      const slot = child.slot
       await visitNode(child, context)
+
+      // 处理 @import 时会删除所有属性，这里避免组件子元素上的 slot 属性被删掉
+      if ($import) {
+        child.slot = slot
+      }
     }
   }
 
-  const $import = node['@import']
   if ($import) {
     let componentPath = path.resolve(path.dirname(context.file), $import)
     if (!fs.existsSync(componentPath)) {

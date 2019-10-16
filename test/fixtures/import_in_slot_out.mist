@@ -1,22 +1,44 @@
 {
   "layout": {
     "style": {
-      "padding": 10,
-      "font-size": 17,
-      "background-color": "#99f",
-      "color": "white"
+      "direction": "vertical"
     },
     "children": [
       {
-        "type": "text",
         "style": {
-          "text": "${title ?: '按钮'}",
-          "padding": 6,
+          "padding": 10,
           "font-size": 17,
-          "background-color": "#ff5900",
-          "color": "white",
-          "corner-radius": 3
-        }
+          "background-color": "#99f",
+          "color": "white"
+        },
+        "children": [
+          {
+            "type": "text",
+            "style": {
+              "text": "${title ?: '按钮'}",
+              "padding": 6,
+              "font-size": 17,
+              "background-color": "#ff5900",
+              "color": "white",
+              "corner-radius": 3
+            }
+          }
+        ]
+      },
+      {
+        "children": [
+          {
+            "type": "text",
+            "style": {
+              "text": "${title ?: '按钮'}",
+              "padding": 6,
+              "font-size": 17,
+              "background-color": "#ff5900",
+              "color": "white",
+              "corner-radius": 3
+            }
+          }
+        ]
       }
     ]
   }

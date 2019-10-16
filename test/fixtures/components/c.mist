@@ -1,0 +1,14 @@
+{
+  "layout": {
+    "children": [
+      {
+        "type": "slot",
+        "name": "slot1"
+      },
+      {
+        "type": "slot",
+        "name": "slot2"
+      }
+    ]
+  }
+}
