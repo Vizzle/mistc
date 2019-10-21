@@ -8,13 +8,15 @@ interface Context {
   file: string
 }
 
-export async function inlineComponents(file: string, context: Context = { inlinedMap: {}, stack: [file], file }) {
+export async function inlineComponents(file: string, content?: string, context: Context = { inlinedMap: {}, stack: [file], file }) {
   const found = context.inlinedMap[file]
   if (found) {
     return found
   }
 
-  const content = await fs.readFile(file, 'utf-8')
+  if (!content) {
+    content = await fs.readFile(file, 'utf-8')
+  }
   const errors: jsonc.ParseError[] = []
   const tpl = jsonc.parse(content, errors, { allowTrailingComma: true })
 
@@ -61,7 +63,7 @@ async function visitNode(node: any, context: Context) {
       throw new Error(`不允许组件循环引用 ${$import}`)
     }
 
-    const component = await inlineComponents(componentPath, {
+    const component = await inlineComponents(componentPath, undefined, {
       inlinedMap: context.inlinedMap,
       file: componentPath,
       stack: [...context.stack, componentPath]
