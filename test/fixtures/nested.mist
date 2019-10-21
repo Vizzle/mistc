@@ -1,6 +1,6 @@
 {
   "layout": {
-    "@import": "components/bar",
+    "import": "components/bar",
     "params": {
       "title": "test"
     }

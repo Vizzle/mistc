@@ -2,7 +2,7 @@
   "layout": {
     "children": [
       {
-        "@import": "components/a",
+        "import": "components/a",
         "params": {
           "title": "test"
         }

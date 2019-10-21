@@ -9,7 +9,7 @@
     "children": [
       {
         // 注意这里只支持这几个属性，诸如 type, vars 等这些属性不能使用
-        "@import": "components/foo", // 引用 ./foo.mist 组件
+        "import": "components/foo", // 引用 ./foo.mist 组件
         "params": { // 组件入参
           "title": "${item.title}"
         },

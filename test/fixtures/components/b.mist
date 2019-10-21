@@ -1,5 +1,5 @@
 {
   "layout": {
-    "@import": "a"
+    "import": "a"
   }
 }

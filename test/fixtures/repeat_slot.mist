@@ -1,6 +1,6 @@
 {
   "layout": {
-    "@import": "components/repeat",
+    "import": "components/repeat",
     "children": [
       {
         "type": "text",

@@ -5,19 +5,19 @@
     },
     "children": [
       {
-        "@import": "components/wrapper",
+        "import": "components/wrapper",
         "children": [
           {
-            "@import": "components/button"
+            "import": "components/button"
           }
         ]
       },
       {
-        "@import": "components/c",
+        "import": "components/c",
         "children": [
           {
             "slot": "slot1",
-            "@import": "components/button"
+            "import": "components/button"
           }
         ]
       }

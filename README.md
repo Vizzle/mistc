@@ -114,7 +114,7 @@ async function test() {
 
 ### 组件引用
 
-引用组件时只需在节点上使用 `@import` 属性，即可根据**文件名**引用另一组件（使用相对路径，可以省略 `.mist` 后缀名）。`@import` 属性所在的节点整个被替换为引用组件的 `layout` 节点。
+引用组件时只需在节点上使用 `import` 属性，即可根据**文件名**引用另一组件（使用相对路径，可以省略 `.mist` 后缀名）。`import` 属性所在的节点整个被替换为引用组件的 `layout` 节点。
 
 引用组件时通过 `params` 属性传入参数；通过 `children` 传入插槽，每一个（直接）子元素会根据其 `slot` 属性插入到对应的插槽中，不写 `slot` 则插入到默认插槽，多个子元素可以插入到同一个插槽。
 
@@ -134,7 +134,7 @@ async function test() {
     "children": [
       {
         // 注意这里只支持这几个属性，诸如 type, vars 等这些属性不能使用
-        "@import": "foo",  // 引用 ./foo.mist 组件
+        "import": "foo",  // 引用 ./foo.mist 组件
         "params": { // 组件入参
           "title": "${item.title}"
         },
