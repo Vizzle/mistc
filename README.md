@@ -43,7 +43,7 @@ async function test() {
 ### 入参
 入参通过变量引用。推荐在 `params` 属性描述参数定义，一来方便使用组件的时候能快速知道组件的入参，二来也可以实现编译检查和编辑器插件提示功能。
 
-```json
+```jsonc
 "params": {
   "title": { // 参数名
     "default": "标题", // 默认值，未传入该参数时使用
@@ -72,7 +72,7 @@ async function test() {
 
 如下定义了一个组件文件 `foo.mist`：
 
-```json
+```jsonc
 {
   // 入参定义，可选，用于编译检查和插件提示
   "params": {
@@ -122,7 +122,7 @@ async function test() {
 
 如下模板引用了上面定义的 `foo` 组件：
 
-```json
+```jsonc
 {
   "data": {
     "item": {
@@ -159,7 +159,7 @@ async function test() {
 
 上面的模板会被编译为如下结果：
 
-```json
+```jsonc
 {
   "data": {
     "item": {
