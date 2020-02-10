@@ -5,10 +5,15 @@ import * as jsonc from 'jsonc-parser'
 interface Context {
   inlinedMap: Record<string, any>
   stack: string[]
-  file: string
+  file: string,
+  platform: string,
+  debug: boolean,
+  resourceNode: any
 }
 
-export async function inlineComponents(file: string, content?: string, context: Context = { inlinedMap: {}, stack: [file], file }) {
+const resourceFile = '/resource.json'
+
+export async function inlineComponents(file: string, content?: string, platform?: string, debug?:boolean, context: Context = { inlinedMap: {}, stack: [file], file , platform: platform ? platform : '', debug: debug ? debug : false, resourceNode: undefined}) {
   const found = context.inlinedMap[file]
   if (found) {
     return found
@@ -21,12 +26,25 @@ export async function inlineComponents(file: string, content?: string, context: 
   const tpl = jsonc.parse(content, errors, { allowTrailingComma: true })
 
   if (errors.length > 0) {
-    const message = `${file} 检查到 ${errors.length} 个语法错误：
-${errors.map(e => `(${e.offset}:${e.length}) ${jsonc.printParseErrorCode(e.error)}`).join('\n')}`
+    const message = `${file} 检查到 ${errors.length} 个语法错误：${errors.map(e => `(${e.offset}:${e.length}) ${jsonc.printParseErrorCode(e.error)}`).join('\n')}`
     throw new Error(message)
   }
 
+  if (platform) {
+    const pathName = path.dirname(file);
+    if (fs.existsSync(pathName + resourceFile)) {
+      const resourceContent = await fs.readFile(pathName + resourceFile, 'utf-8')
+      context.resourceNode = jsonc.parse(resourceContent);
+    }
+  }
+
   if (tpl.layout) {
+    if (tpl.controller && context.resourceNode) {
+      const value = context.resourceNode[tpl.controller]
+      if (value) {
+        tpl.controller = value[context.platform]
+      }
+    }
     await visitNode(tpl.layout, context)
   }
 
@@ -38,6 +56,17 @@ ${errors.map(e => `(${e.offset}:${e.length}) ${jsonc.printParseErrorCode(e.error
 async function visitNode(node: any, context: Context) {
   const $import = node['import']
   const children = node.children
+  if (context.resourceNode && node.style && !context.debug) {
+    for (const key in node.style) {
+      const value = node.style[key]
+      if (typeof(value)=='string' && value.startsWith('@')) {
+        const replaceValue = context.resourceNode[value.substring(1)]
+        if (replaceValue) {
+          node.style[key] = replaceValue[context.platform]
+        }
+      }
+    }
+  }
   if (children instanceof Array) {
     for (const child of children) {
       const slot = child.slot
@@ -63,10 +92,13 @@ async function visitNode(node: any, context: Context) {
       throw new Error(`不允许组件循环引用 ${$import}`)
     }
 
-    const component = await inlineComponents(componentPath, undefined, {
+    const component = await inlineComponents(componentPath, undefined, context.platform, context.debug, {
       inlinedMap: context.inlinedMap,
       file: componentPath,
-      stack: [...context.stack, componentPath]
+      stack: [...context.stack, componentPath],
+      platform: context.platform,
+      debug: context.debug,
+      resourceNode: context.resourceNode
     })
 
     replaceComponent(node, component)

@@ -10,6 +10,8 @@ interface Options {
   minify?: boolean
   output?: string
   file?: string
+  platform?: string
+  debug?:boolean
   version?: boolean
   checkUpdate?: boolean
   help?: boolean
@@ -26,6 +28,8 @@ Options:
   -o,--output <file>    输出到指定文件
   -m,--minify           是否进行最小化
   -u,--check-update     检查更新，输出 JSON 字符串，属性有 hasUpdate, currentVersion, newVersion
+  -p,--platform         编译平台
+  -d,--debug            是否调试
   -v,--version          输出版本号
   -h,--help             显示帮助
 `)
@@ -84,6 +88,21 @@ function parseArgs() {
         options.version = true
         break;
       }
+      case '-p':
+      case '--platform': {
+        i++;
+        const platform = argv[i]
+        if (platform !== 'android' && platform !== 'ios') {
+          throw new Error('请输入android或ios')
+        }
+        options.platform = platform
+        break;
+      }
+      case '-d':
+      case '--debug': {
+        options.debug = true
+        break;
+      }
       case '-u':
       case '--check-update': {
         options.checkUpdate = true
@@ -134,7 +153,7 @@ async function main() {
   else {
     const cwd = process.cwd()
     const inputFile = path.resolve(cwd, options.file)
-    const result = await compile(inputFile, { minify: options.minify })
+    const result = await compile(inputFile, { minify: options.minify, platform: options.platform, debug: options.debug })
     if (options.output) {
       const outputFile = path.resolve(cwd, options.output)
       await fs.ensureFile(outputFile)
