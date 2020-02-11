@@ -26,7 +26,8 @@ export async function inlineComponents(file: string, content?: string, platform?
   const tpl = jsonc.parse(content, errors, { allowTrailingComma: true })
 
   if (errors.length > 0) {
-    const message = `${file} 检查到 ${errors.length} 个语法错误：${errors.map(e => `(${e.offset}:${e.length}) ${jsonc.printParseErrorCode(e.error)}`).join('\n')}`
+    const message = `${file} 检查到 ${errors.length} 个语法错误：
+    ${errors.map(e => `(${e.offset}:${e.length}) ${jsonc.printParseErrorCode(e.error)}`).join('\n')}`
     throw new Error(message)
   }
 
@@ -53,19 +54,32 @@ export async function inlineComponents(file: string, content?: string, platform?
   return tpl
 }
 
-async function visitNode(node: any, context: Context) {
-  const $import = node['import']
-  const children = node.children
-  if (context.resourceNode && node.style && !context.debug) {
-    for (const key in node.style) {
-      const value = node.style[key]
+function visitTemp(node: any, context: Context) {
+  for (const key in node) {
+    if (key == 'children') {
+      continue;
+    }
+    const value = node[key]
+    if (typeof(value) === 'object') {
+      visitTemp(value, context)
+    } else {
       if (typeof(value)=='string' && value.startsWith('@')) {
         const replaceValue = context.resourceNode[value.substring(1)]
         if (replaceValue) {
-          node.style[key] = replaceValue[context.platform]
+          node[key] = replaceValue[context.platform]
+        } else {
+          throw new Error(`找不到配置 ${value}`)
         }
       }
     }
+  }
+}
+
+async function visitNode(node: any, context: Context) {
+  const $import = node['import']
+  const children = node.children
+  if (context.resourceNode && !context.debug) {
+    visitTemp(node, context)
   }
   if (children instanceof Array) {
     for (const child of children) {
