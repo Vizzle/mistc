@@ -1,19 +1,19 @@
 import * as path from 'path'
 import * as fs from 'fs-extra'
 import * as jsonc from 'jsonc-parser'
+import { platform } from 'os'
 
 interface Context {
   inlinedMap: Record<string, any>
   stack: string[]
   file: string,
-  platform: string,
-  debug: boolean,
-  resourceNode: any
+  platform?:string,
+  debug?:boolean
 }
 
 const resourceFile = '/resource.json'
 
-export async function inlineComponents(file: string, content?: string, platform?: string, debug?:boolean, context: Context = { inlinedMap: {}, stack: [file], file , platform: platform ? platform : '', debug: debug ? debug : false, resourceNode: undefined}) {
+export async function inlineComponents(file: string, content?: string, context: Context = { inlinedMap: {}, stack: [file], file , platform : undefined, debug : false}) {
   const found = context.inlinedMap[file]
   if (found) {
     return found
@@ -29,23 +29,20 @@ export async function inlineComponents(file: string, content?: string, platform?
     const message = `${file} 检查到 ${errors.length} 个语法错误：
     ${errors.map(e => `(${e.offset}:${e.length}) ${jsonc.printParseErrorCode(e.error)}`).join('\n')}`
     throw new Error(message)
-  }
+  } 
 
-  if (platform) {
+  if (context.platform) {
     const pathName = path.dirname(file);
     if (fs.existsSync(pathName + resourceFile)) {
       const resourceContent = await fs.readFile(pathName + resourceFile, 'utf-8')
-      context.resourceNode = jsonc.parse(resourceContent);
+      const resourceJson = jsonc.parse(resourceContent);
+      if (resourceJson && !context.debug) {
+        replaceResourceString(tpl, {'resourceJson': resourceJson, 'platform': context.platform })
+      }
     }
   }
 
   if (tpl.layout) {
-    if (tpl.controller && context.resourceNode) {
-      const value = context.resourceNode[tpl.controller]
-      if (value) {
-        tpl.controller = value[context.platform]
-      }
-    }
     await visitNode(tpl.layout, context)
   }
 
@@ -54,19 +51,16 @@ export async function inlineComponents(file: string, content?: string, platform?
   return tpl
 }
 
-function visitTemp(node: any, context: Context) {
+function replaceResourceString(node: any, resources : Record<string, any>) {
   for (const key in node) {
-    if (key == 'children') {
-      continue;
-    }
     const value = node[key]
-    if (typeof(value) === 'object') {
-      visitTemp(value, context)
+    if (typeof(value) === 'object' || value instanceof Array) {
+      replaceResourceString(value, resources)
     } else {
       if (typeof(value)=='string' && value.startsWith('@')) {
-        const replaceValue = context.resourceNode[value.substring(1)]
+        const replaceValue = resources.resourceJson[value.substring(1)]
         if (replaceValue) {
-          node[key] = replaceValue[context.platform]
+          node[key] = replaceValue[resources.platform]
         } else {
           throw new Error(`找不到配置 ${value}`)
         }
@@ -78,9 +72,6 @@ function visitTemp(node: any, context: Context) {
 async function visitNode(node: any, context: Context) {
   const $import = node['import']
   const children = node.children
-  if (context.resourceNode && !context.debug) {
-    visitTemp(node, context)
-  }
   if (children instanceof Array) {
     for (const child of children) {
       const slot = child.slot
@@ -106,13 +97,12 @@ async function visitNode(node: any, context: Context) {
       throw new Error(`不允许组件循环引用 ${$import}`)
     }
 
-    const component = await inlineComponents(componentPath, undefined, context.platform, context.debug, {
+    const component = await inlineComponents(componentPath, undefined, {
       inlinedMap: context.inlinedMap,
       file: componentPath,
       stack: [...context.stack, componentPath],
       platform: context.platform,
-      debug: context.debug,
-      resourceNode: context.resourceNode
+      debug: context.debug
     })
 
     replaceComponent(node, component)
