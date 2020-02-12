@@ -36,8 +36,8 @@ export async function inlineComponents(file: string, content?: string, context: 
     if (fs.existsSync(pathName + resourceFile)) {
       const resourceContent = await fs.readFile(pathName + resourceFile, 'utf-8')
       const resourceJson = jsonc.parse(resourceContent);
-      if (resourceJson && !context.debug) {
-        replaceResourceString(tpl, {'resourceJson': resourceJson, 'platform': context.platform })
+      if (resourceJson) {
+        replaceResourceString(tpl, {'resourceJson': resourceJson, 'platform': context.platform, 'debug': context.debug, 'pathName': pathName})
       }
     }
   }
@@ -54,15 +54,28 @@ export async function inlineComponents(file: string, content?: string, context: 
 function replaceResourceString(node: any, resources : Record<string, any>) {
   for (const key in node) {
     const value = node[key]
-    if (typeof(value) === 'object' || value instanceof Array) {
+    if ((value && typeof value === 'object') || value instanceof Array) {
       replaceResourceString(value, resources)
     } else {
-      if (typeof(value)=='string' && value.startsWith('@')) {
-        const replaceValue = resources.resourceJson[value.substring(1)]
+      if (typeof value === 'string' && value.startsWith('@')) {
+        const beforeValue = value.substring(1);
+        const replaceValue = resources.resourceJson[beforeValue]
         if (replaceValue) {
           node[key] = replaceValue[resources.platform]
+        } else if (fs.existsSync(`${resources.pathName}/Images/${beforeValue}.png`)){
+          if (!resources.debug) {
+            if (resources.platform === 'ios') {
+              if (resources.resourceJson.iosBundle) {
+                node[key] = `${resources.resourceJson.iosBundle}/${beforeValue}`
+              }
+            } else {
+              if (resources.resourceJson.androidBundle) {
+                node[key] = `${resources.resourceJson.androidBundle}/${beforeValue}`
+              }
+            }
+          }
         } else {
-          throw new Error(`找不到配置 ${value}`)
+          throw new Error(`未找到 ${resources.pathName}/Images/${beforeValue}.png`)
         }
       }
     }
