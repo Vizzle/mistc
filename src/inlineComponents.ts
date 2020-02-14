@@ -60,7 +60,7 @@ function replaceResourceString(node: any, resources : Record<string, any>) {
       if (typeof value === 'string' && value.startsWith('@')) {
         const beforeValue = value.substring(1);
         const replaceValue = resources.resourceJson[beforeValue]
-        if (replaceValue) {
+        if (replaceValue && replaceValue[resources.platform]) {
           node[key] = replaceValue[resources.platform]
         } else if (fs.existsSync(`${resources.pathName}/Images/${beforeValue}.png`)){
           if (!resources.debug) {
@@ -69,9 +69,7 @@ function replaceResourceString(node: any, resources : Record<string, any>) {
                 node[key] = `${resources.resourceJson.iosBundle}/${beforeValue}`
               }
             } else {
-              if (resources.resourceJson.androidBundle) {
-                node[key] = `${resources.resourceJson.androidBundle}/${beforeValue}`
-              }
+              node[key] = beforeValue
             }
           }
         } else {
