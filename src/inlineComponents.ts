@@ -1,14 +1,19 @@
 import * as path from 'path'
 import * as fs from 'fs-extra'
 import * as jsonc from 'jsonc-parser'
+import { platform } from 'os'
 
 interface Context {
   inlinedMap: Record<string, any>
   stack: string[]
-  file: string
+  file: string,
+  platform?:string,
+  debug?:boolean
 }
 
-export async function inlineComponents(file: string, content?: string, context: Context = { inlinedMap: {}, stack: [file], file }) {
+const resourceFile = '/resource.json'
+
+export async function inlineComponents(file: string, content?: string, context: Context = { inlinedMap: {}, stack: [file], file , platform : undefined, debug : false}) {
   const found = context.inlinedMap[file]
   if (found) {
     return found
@@ -22,8 +27,19 @@ export async function inlineComponents(file: string, content?: string, context: 
 
   if (errors.length > 0) {
     const message = `${file} 检查到 ${errors.length} 个语法错误：
-${errors.map(e => `(${e.offset}:${e.length}) ${jsonc.printParseErrorCode(e.error)}`).join('\n')}`
+    ${errors.map(e => `(${e.offset}:${e.length}) ${jsonc.printParseErrorCode(e.error)}`).join('\n')}`
     throw new Error(message)
+  } 
+
+  if (context.platform) {
+    const pathName = path.dirname(file);
+    if (fs.existsSync(pathName + resourceFile)) {
+      const resourceContent = await fs.readFile(pathName + resourceFile, 'utf-8')
+      const resourceJson = jsonc.parse(resourceContent);
+      if (resourceJson) {
+        replaceResourceString(tpl, {'resourceJson': resourceJson, 'platform': context.platform, 'debug': context.debug, 'pathName': pathName})
+      }
+    }
   }
 
   if (tpl.layout) {
@@ -33,6 +49,35 @@ ${errors.map(e => `(${e.offset}:${e.length}) ${jsonc.printParseErrorCode(e.error
   context.inlinedMap[file] = tpl
 
   return tpl
+}
+
+function replaceResourceString(node: any, resources : Record<string, any>) {
+  for (const key in node) {
+    const value = node[key]
+    if ((value && typeof value === 'object') || value instanceof Array) {
+      replaceResourceString(value, resources)
+    } else {
+      if (typeof value === 'string' && value.startsWith('@')) {
+        const beforeValue = value.substring(1);
+        const replaceValue = resources.resourceJson[beforeValue]
+        if (replaceValue && replaceValue[resources.platform]) {
+          node[key] = replaceValue[resources.platform]
+        } else if (fs.existsSync(`${resources.pathName}/Images/${beforeValue}.png`)){
+          if (!resources.debug) {
+            if (resources.platform === 'ios') {
+              if (resources.resourceJson.iosBundle) {
+                node[key] = `${resources.resourceJson.iosBundle}/${beforeValue}`
+              }
+            } else {
+              node[key] = beforeValue
+            }
+          }
+        } else {
+          throw new Error(`未找到 ${resources.pathName}/Images/${beforeValue}.png`)
+        }
+      }
+    }
+  }
 }
 
 async function visitNode(node: any, context: Context) {
@@ -66,7 +111,9 @@ async function visitNode(node: any, context: Context) {
     const component = await inlineComponents(componentPath, undefined, {
       inlinedMap: context.inlinedMap,
       file: componentPath,
-      stack: [...context.stack, componentPath]
+      stack: [...context.stack, componentPath],
+      platform: context.platform,
+      debug: context.debug
     })
 
     replaceComponent(node, component)
