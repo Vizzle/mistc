@@ -37,7 +37,12 @@ export async function inlineComponents(file: string, content?: string, context: 
       const resourceContent = await fs.readFile(pathName + resourceFile, 'utf-8')
       const resourceJson = jsonc.parse(resourceContent);
       if (resourceJson) {
-        replaceResourceString(tpl, {'resourceJson': resourceJson, 'platform': context.platform, 'debug': context.debug, 'pathName': pathName})
+        replaceResourceString(tpl, {
+          resourceJson: resourceJson,
+          platform: context.platform,
+          debug: context.debug,
+          pathName: pathName,
+        })
       }
     }
   }
@@ -51,29 +56,34 @@ export async function inlineComponents(file: string, content?: string, context: 
   return tpl
 }
 
-function replaceResourceString(node: any, resources : Record<string, any>) {
+function replaceResourceString(node: any, context: {
+  resourceJson: Record<string, any>
+  platform: string
+  pathName: string
+  debug?: boolean
+}) {
   for (const key in node) {
     const value = node[key]
     if ((value && typeof value === 'object') || value instanceof Array) {
-      replaceResourceString(value, resources)
+      replaceResourceString(value, context)
     } else {
       if (typeof value === 'string' && value.startsWith('@')) {
         const beforeValue = value.substring(1);
-        const replaceValue = resources.resourceJson[beforeValue]
-        if (replaceValue && replaceValue[resources.platform]) {
-          node[key] = replaceValue[resources.platform]
-        } else if (fs.existsSync(`${resources.pathName}/Images/${beforeValue}.png`)){
-          if (!resources.debug) {
-            if (resources.platform === 'ios') {
-              if (resources.resourceJson.iosBundle) {
-                node[key] = `${resources.resourceJson.iosBundle}/${beforeValue}`
+        const replaceValue = context.resourceJson[beforeValue]
+        if (replaceValue && replaceValue[context.platform]) {
+          node[key] = replaceValue[context.platform]
+        } else if (fs.existsSync(`${context.pathName}/Images/${beforeValue}.png`)){
+          if (!context.debug) {
+            if (context.platform === 'ios') {
+              if (context.resourceJson.iosBundle) {
+                node[key] = `${context.resourceJson.iosBundle}/${beforeValue}`
               }
             } else {
               node[key] = beforeValue
             }
           }
         } else {
-          throw new Error(`未找到 ${resources.pathName}/Images/${beforeValue}.png`)
+          throw new Error(`未找到 ${context.pathName}/Images/${beforeValue}.png`)
         }
       }
     }
