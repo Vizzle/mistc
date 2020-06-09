@@ -15,6 +15,7 @@ interface Options {
   version?: boolean
   checkUpdate?: boolean
   help?: boolean
+  binary?: boolean
 }
 
 function printHelp() {
@@ -27,6 +28,7 @@ Usage:
 Options:
   -o,--output <file>    输出到指定文件
   -m,--minify           是否进行最小化
+  -b,--binary           是否编译为二进制产物
   -u,--check-update     检查更新，输出 JSON 字符串，属性有 hasUpdate, currentVersion, newVersion
   -p,--platform         编译平台
   -d,--debug            是否调试
@@ -113,6 +115,11 @@ function parseArgs() {
         options.minify = true
         break;
       }
+      case '-b':
+      case '--binary': {
+        options.binary = true
+        break;
+      }
       default: {
         if (arg[0] === '-') {
           throw new Error(`不支持的选项 \`${arg}\``)
@@ -153,7 +160,7 @@ async function main() {
   else {
     const cwd = process.cwd()
     const inputFile = path.resolve(cwd, options.file)
-    const result = await compile(inputFile, { minify: options.minify, platform: options.platform, debug: options.debug })
+    const result = await compile(inputFile, { minify: options.minify, platform: options.platform, debug: options.debug, binary: options.binary })
     if (options.output) {
       const outputFile = path.resolve(cwd, options.output)
       await fs.ensureFile(outputFile)
