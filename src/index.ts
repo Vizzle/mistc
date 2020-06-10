@@ -1,5 +1,6 @@
 import { inlineComponents } from './inlineComponents'
 import { compileToBinary } from './compileToBinary'
+import { convertExpressions } from './convertExpressions'
 
 interface CompileOptions {
   /**
@@ -20,6 +21,7 @@ interface CompileOptions {
 
 export async function compile(file: string, options: CompileOptions = { minify: false, debug: false }, content?: string) {
   const result = await inlineComponents(file, content,  { inlinedMap: {}, stack: [file], file , platform : options.platform, debug : options.debug})
+  convertExpressions(result)
   if (options.binary) {
     return String.fromCharCode(...compileToBinary(result))
   }
