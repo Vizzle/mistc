@@ -55,17 +55,20 @@ interface Value {
   value?: number | string | Expression | Length | ActionList
 }
 
-interface KeyedValue extends Value {
+interface Pair {
   key: number
+  value: number
 }
 
+type PairList = Pair[]
+
 interface Node {
-  properties: KeyedValue[]
-  extra: KeyedValue[]
-  type: Value
-  gone: Value
-  repeat: Value
-  vars: KeyedValue[]
+  properties: PairList
+  extra: PairList
+  type: number
+  gone: number
+  repeat: number
+  vars: PairList
   index: number
   children: Node[]
 }
@@ -73,11 +76,11 @@ interface Node {
 interface CompilationResult {
   info: {
     controller: Value
-    state: KeyedValue[]
-    data: KeyedValue[]
-    notifications: KeyedValue[]
-    actions: KeyedValue[]
-    extra: KeyedValue[]
+    state: PairList
+    data: PairList
+    notifications: PairList
+    actions: PairList
+    extra: PairList
   }
   nodes: Node[]
   values: Value[]
@@ -164,6 +167,14 @@ class Writer {
       default: {
         throw new Error('不支持的 Value 类型')
       }
+    }
+  }
+
+  public writePairList(pairList: PairList) {
+    this.writeInt16(pairList.length)
+    for (const item of pairList) {
+      this.writeInt16(item.key)
+      this.writeInt16(item.value)
     }
   }
 
@@ -257,9 +268,30 @@ function values(w: Writer, r: CompilationResult) {
 }
 
 function nodes(w: Writer, r: CompilationResult) {
-  // TODO
+  for (const node of r.nodes) {
+    w.writeInt16(node.type)
+    w.writeInt16(node.gone)
+    w.writeInt16(node.repeat)
+
+    w.writePairList(node.vars)
+    w.writePairList(node.properties)
+    w.writePairList(node.extra)
+  }
 }
 
 function tree(w: Writer, r: CompilationResult) {
-  // TODO
+  treeRecursive(w, r.nodes[0])
+}
+
+function treeRecursive(w: Writer, node: Node) {
+  w.writeInt16(node.index)
+  if (node.children) {
+    w.writeInt16(node.children.length)
+    for (const child of node.children) {
+      treeRecursive(w, child)
+    }
+  } else {
+    w.writeInt16(0)
+  }
+  
 }
