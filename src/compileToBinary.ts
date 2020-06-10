@@ -35,10 +35,10 @@ interface Length {
 }
 
 interface Action {
-  if: Value
-  type: Value
-  params: Value
-  result: Value
+  if: number
+  type: number
+  params: number
+  result: number
   success: ActionList
   error: ActionList
   finish: ActionList
@@ -119,8 +119,69 @@ class Writer {
     this.writeArray(Array.from(new Int8Array(buffer)))
   }
 
-  public writeExpression(exp: Expression) {
+  public writeValue(c: Value) {
+    this.writeByte(c.type)
+    switch (c.type) {
+      case ValueType.String: {
+        const str = c.value as string
+        if (str.length >= 0xff) {
+          this.writeByte(0xff)
+          this.writeInt32(str.length)
+        }
+        else {
+          this.writeByte(str.length)
+        }
+        this.writeChars(str)
+        break
+      }
+      case ValueType.Number: {
+        this.writeDouble(c.value as number)
+        break
+      }
+      case ValueType.True:
+      case ValueType.False:
+      case ValueType.Null: {
+        break
+      }
+      case ValueType.Color: {
+        this.writeInt32(c.value as number)
+        break
+      }
+      case ValueType.Length: {
+        const length = c.value as Length
+        this.writeDouble(length.value)
+        this.writeByte(length.unit)
+        break
+      }
+      case ValueType.Action: {
+        this.writeActionList(c.value as ActionList)
+        break
+      }
+      case ValueType.Expression: {
+        this.writeExpression(c.value as Expression)
+        break
+      }
+      default: {
+        throw new Error('不支持的 Value 类型')
+      }
+    }
+  }
+
+  private writeExpression(exp: Expression) {
     // TODO
+  }
+
+  private writeActionList(actList: ActionList) {
+    this.writeByte(actList.length)
+    for (const act of actList) {
+      this.writeInt16(act.if)
+      this.writeInt16(act.type)
+      this.writeInt16(act.params)
+      this.writeInt16(act.result)
+      this.writeActionList(act.success)
+      this.writeActionList(act.error)
+      this.writeActionList(act.finish)
+    }
   }
 
   private writeInt(n: number, bytes: number) {
@@ -191,51 +252,7 @@ function info(w: Writer, r: CompilationResult) {
 function values(w: Writer, r: CompilationResult) {
   w.writeInt16(r.values.length)
   for (const c of r.values) {
-    w.writeByte(c.type)
-    switch (c.type) {
-      case ValueType.String: {
-        const str = c.value as string
-        if (str.length >= 0xff) {
-          w.writeByte(0xff)
-          w.writeInt32(str.length)
-        }
-        else {
-          w.writeByte(str.length)
-        }
-        w.writeChars(str)
-        break
-      }
-      case ValueType.Number: {
-        w.writeDouble(c.value as number)
-        break
-      }
-      case ValueType.True:
-      case ValueType.False:
-      case ValueType.Null: {
-        break
-      }
-      case ValueType.Color: {
-        w.writeInt32(c.value as number)
-        break
-      }
-      case ValueType.Length: {
-        const length = c.value as Length
-        w.writeDouble(length.value)
-        w.writeByte(length.unit)
-        break
-      }
-      case ValueType.Action: {
-        // TODO
-        break
-      }
-      case ValueType.Expression: {
-        // TODO
-        break
-      }
-      default: {
-        throw new Error('不支持的 Value 类型')
-      }
-    }
+    w.writeValue(c)
   }
 }
 
