@@ -1,4 +1,4 @@
-import { Length, Unit } from "./compileToBinary";
+import { Length, Unit } from "./compiler";
 
 export function parseLength(value: string | number): Length {
   if (typeof value === 'number') {

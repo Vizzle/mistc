@@ -1,5 +1,5 @@
 import { inlineComponents } from './inlineComponents'
-import { compileToBinary } from './compileToBinary'
+import { compileToBinary } from './binary'
 import { convertExpressions } from './convertExpressions'
 
 interface CompileOptions {
