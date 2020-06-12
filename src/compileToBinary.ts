@@ -298,7 +298,7 @@ function compile(tpl: any): CompilationResult {
       assertType(KeyType.Action)
       const node = parseExpression(JSON.stringify(value, (_, v) => {
         if (typeof v === 'string' && v.startsWith('$:')) {
-          return printNode(parseExpression(v))
+          return printNode(parseExpression(v.substr(2)))
         }
         return v
       }))
