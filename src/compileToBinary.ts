@@ -116,9 +116,9 @@ class Writer {
   }
 
   public writeDouble(n: number) {
-    var buffer = new ArrayBuffer(8);
-    var longNum = new Float64Array(buffer);
-    longNum[0] = n;
+    const buffer = new ArrayBuffer(8);
+    const view = new DataView(buffer)
+    view.setFloat64(0, n, false)
     this.writeArray(Array.from(new Int8Array(buffer)))
   }
 
