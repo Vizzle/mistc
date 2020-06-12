@@ -68,7 +68,7 @@ export function parseColor(value: string) {
       }
     }
 
-    return (a << 24) & (r << 16) & (g << 8) & b
+    return (a << 24) | (r << 16) | (g << 8) | b
   }
   throw new Error(`'${value}' 颜色格式不正确`)
 }
