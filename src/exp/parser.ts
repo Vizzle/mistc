@@ -68,7 +68,7 @@ export function compareBinaryOperatorPriority(op1: BinaryOp, op2: BinaryOp): num
     return BIN_OP_PRIORITY[op1][1] - BIN_OP_PRIORITY[op2][0]
 }
 
-enum UnaryOp {
+export enum UnaryOp {
     None,
     Negative,
     Positive,
