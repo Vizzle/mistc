@@ -1,3 +1,7 @@
+import { parseExpression, printNode } from "./convertExpressions"
+import { ExpressionNode } from "./exp/parser"
+import { parseLength, parseColor } from "./utils"
+import { BinaryEnv, KeyType } from "./binaryDefines"
 
 enum ValueType {
   None,
@@ -10,9 +14,10 @@ enum ValueType {
   Length,
   Color,
   Action,
+  Enum,
 }
 
-enum Unit {
+export enum Unit {
   none,
   percent,
   px,
@@ -29,7 +34,7 @@ enum Unit {
   pt,
 }
 
-interface Length {
+export interface Length {
   value: number
   unit: Unit
 }
@@ -46,8 +51,8 @@ interface Action {
 
 type ActionList = Action[]
 
-class Expression {
-
+interface Expression {
+  node: ExpressionNode
 }
 
 interface Value {
@@ -123,6 +128,7 @@ class Writer {
   }
 
   public writeValue(c: Value) {
+    console.log('writeValue', c.type, c.value)
     this.writeByte(c.type)
     switch (c.type) {
       case ValueType.String: {
@@ -143,7 +149,8 @@ class Writer {
       }
       case ValueType.True:
       case ValueType.False:
-      case ValueType.Null: {
+      case ValueType.Null:
+      case ValueType.None: {
         break
       }
       case ValueType.Color: {
@@ -158,6 +165,10 @@ class Writer {
       }
       case ValueType.Action: {
         this.writeActionList(c.value as ActionList)
+        break
+      }
+      case ValueType.Enum: {
+        this.writeInt16(c.value as number)
         break
       }
       case ValueType.Expression: {
@@ -204,23 +215,213 @@ class Writer {
 }
 
 function compile(tpl: any): CompilationResult {
-  const none: Value = {
-    type: ValueType.None
+  const values: Value[] = []
+  const nodes: Node[] = []
+  const env = new BinaryEnv(0)
+  
+  const createValue = (value: any, type: KeyType): Value => {
+    const assertType = (targetType: KeyType) => {
+      if (type !== targetType && type !== KeyType.Any) {
+        throw new Error(`${JSON.stringify(value)} 值的类型不正确`)
+      }
+    }
+
+    if (value === undefined) {
+      return { type: ValueType.None }
+    }
+
+    if (typeof value === 'string') {
+      if (value.startsWith('$:')) {
+        const node = parseExpression(value.substr(2))
+        return {
+          type: ValueType.Expression,
+          value: { node }
+        }
+      }
+      else if (type === KeyType.Length) {
+        return {
+          type: ValueType.Length,
+          value: parseLength(value)
+        }
+      }
+      else if (type === KeyType.Color) {
+        return {
+          type: ValueType.Color,
+          value: parseColor(value)
+        }
+      }
+      else if (type === KeyType.Enum) {
+        const index = env.getEnumIndex(value)
+        if (index === undefined) {
+          throw new Error(`未识别的枚举值 '${value}'`)
+        }
+        return {
+          type: ValueType.Enum,
+          value: index
+        }
+      }
+      else {
+        assertType(KeyType.String)
+        return {
+          type: ValueType.String,
+          value
+        }
+      }
+    }
+    else if (typeof value === 'number') {
+      if (type === KeyType.Length) {
+        return {
+          type: ValueType.Length,
+          value: parseLength(value)
+        }
+      }
+      else {
+        assertType(KeyType.Number)
+        return {
+          type: ValueType.Number,
+          value
+        }
+      }
+    }
+    else if (typeof value === 'boolean') {
+      assertType(KeyType.Bool)
+      return {
+        type: value ? ValueType.True : ValueType.False,
+      }
+    }
+    else if (value === null) {
+      return {
+        type: ValueType.Null,
+      }
+    }
+    else if (typeof value === 'object') {
+      assertType(KeyType.Action)
+      const node = parseExpression(JSON.stringify(value, (_, v) => {
+        if (typeof v === 'string' && v.startsWith('$:')) {
+          return printNode(parseExpression(v))
+        }
+        return v
+      }))
+
+      return {
+        type: ValueType.Expression,
+        value: { node }
+      }
+    }
+
+    throw new Error(`未识别的值类型：${value} (${typeof value})`)
   }
 
-  // TODO
+  const equalsValue = (a: Value, b: Value) => {
+    if (a.type !== b.type) {
+      return false
+    }
+
+    switch (a.type) {
+      case ValueType.String:
+      case ValueType.Number:
+      case ValueType.Color:
+      case ValueType.Enum:
+        return a.value === b.value
+      case ValueType.Null:
+      case ValueType.True:
+      case ValueType.False:
+      case ValueType.None:
+        return true
+      case ValueType.Expression:
+        return printNode((a.value as Expression).node) === printNode((b.value as Expression).node)
+      case ValueType.Length:
+        const l1 = a.value as Length
+        const l2 = b.value as Length
+        return l1.unit === l2.unit && l1.value === l2.value
+      case ValueType.Action:
+        return false
+    }
+    return false
+  }
+
+  const getValueIndex = (obj: any, type: KeyType = KeyType.Any): number => {
+    const value = createValue(obj, type)
+    const index = values.findIndex(v => equalsValue(v, value))
+    if (index >= 0) {
+      return index
+    }
+    return values.push(value) - 1
+  }
+
+  const convertNode = (obj: any) => {
+    const node: Node = {
+      type: getValueIndex(obj.type),
+      gone: getValueIndex(obj.gone),
+      repeat: getValueIndex(obj.repeat),
+      index: nodes.length,
+      children: [],
+      vars: [],
+      properties: [],
+      extra: [],
+    }
+
+    nodes.push(node)
+    
+    if (obj.vars) {
+      let vars: any = {}
+      if (obj.vars instanceof Array) {
+        for (const v of obj.vars) {
+          vars = { ...vars, ...v }
+        }
+      }
+      else {
+        vars = obj.vars
+      }
+      for (const key in vars) {
+        node.vars.push({ key: getValueIndex(key), value: getValueIndex(vars[key]) })
+      }
+    }
+
+    const attrs = { ...obj }
+    delete attrs.type
+    delete attrs.gone
+    delete attrs.repeat
+    delete attrs.vars
+
+    const style = attrs.style || {}
+    for (const key in style) {
+      const info = env.getKeyInfo(key)
+      if (info) {
+        node.properties.push({ key: info.index, value: getValueIndex(style[key], info.type) })
+      }
+      else {
+        node.extra.push({ key: getValueIndex(key), value: getValueIndex(style[key]) })
+      }
+    }
+
+    if (obj.children) {
+      for (const child of obj.children) {
+        if (typeof child === 'object' && !(child instanceof Array)) {
+          node.children.push(convertNode(child))
+        }
+        else {
+          throw new Error('节点格式不正确，目前不支持节点为表达式')
+        }
+      }
+    }
+
+    return node
+  }
+
+  convertNode(tpl.layout)
 
   return {
     info: {
-      controller: none,
+      controller: getValueIndex(tpl.controller),
       state: [],
       data: [],
       notifications: [],
       actions: [],
       extra: [],
     },
-    nodes: [],
-    values: [],
+    nodes: nodes,
+    values: values,
   }
 }
 
@@ -273,6 +474,7 @@ function values(w: Writer, r: CompilationResult) {
 }
 
 function nodes(w: Writer, r: CompilationResult) {
+  w.writeInt16(r.nodes.length)
   for (const node of r.nodes) {
     w.writeInt16(node.type)
     w.writeInt16(node.gone)

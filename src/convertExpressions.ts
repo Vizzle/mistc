@@ -92,7 +92,7 @@ function convertExp(str: string) {
   }
 }
 
-function parseExpression(str: string) {
+export function parseExpression(str: string) {
   const result = Parser.parse(str)
   if (result.expression) {
     return result.expression
@@ -100,7 +100,7 @@ function parseExpression(str: string) {
   throw new Error(`failed to parse expression \`${str}\`. Error: ${result.errorMessage}`)
 }
 
-function printNode(node: ExpressionNode | null | undefined, prettyPrint: boolean = false): string {
+export function printNode(node: ExpressionNode | null | undefined, prettyPrint: boolean = false): string {
   if (!node) return ''
 
   const space = prettyPrint ? ' ' : ''
