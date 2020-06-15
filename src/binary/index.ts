@@ -12,13 +12,13 @@ export function compileToBinary(tpl: any) {
   chunk(w, r, 'NODE', nodes)
   chunk(w, r, 'TREE', tree)
 
-  return w.data()
+  return new Buffer(w.data())
 }
 
 function header(w: Writer) {
   w.writeChars('MST')
-  w.writeByte(1)
-  w.writeByte(0)
+  w.writeUint8(1)
+  w.writeUint8(0)
 }
 
 function chunk(w: Writer, r: CompilationResult, chunkName: string, chunkCallback: (w: Writer, r: CompilationResult) => void) {
@@ -29,13 +29,13 @@ function chunk(w: Writer, r: CompilationResult, chunkName: string, chunkCallback
   const chunkWriter = new Writer()
   chunkCallback(chunkWriter, r)
   const chuckData = chunkWriter.data()
-  w.writeInt32(chuckData.length + 8)
+  w.writeUint32(chuckData.length + 8)
   w.writeChars(chunkName)
   w.writeArray(chuckData)
 }
 
 function info(w: Writer, r: CompilationResult) {
-  w.writeInt16(r.info.controller)
+  w.writeUint16(r.info.controller)
   w.writePairList(r.info.state)
   w.writePairList(r.info.data)
   w.writePairList(r.info.notifications)
@@ -44,18 +44,18 @@ function info(w: Writer, r: CompilationResult) {
 }
 
 function values(w: Writer, r: CompilationResult) {
-  w.writeInt16(r.values.length)
+  w.writeUint16(r.values.length)
   for (const c of r.values) {
     w.writeValue(c, v => r.values.findIndex(obj => obj.value === v))
   }
 }
 
 function nodes(w: Writer, r: CompilationResult) {
-  w.writeInt16(r.nodes.length)
+  w.writeUint16(r.nodes.length)
   for (const node of r.nodes) {
-    w.writeInt16(node.type)
-    w.writeInt16(node.gone)
-    w.writeInt16(node.repeat)
+    w.writeUint16(node.type)
+    w.writeUint16(node.gone)
+    w.writeUint16(node.repeat)
 
     w.writePairList(node.vars)
     w.writePairList(node.properties)
@@ -68,14 +68,14 @@ function tree(w: Writer, r: CompilationResult) {
 }
 
 function treeRecursive(w: Writer, node: Node) {
-  w.writeInt16(node.index)
+  w.writeUint16(node.index)
   if (node.children) {
-    w.writeInt16(node.children.length)
+    w.writeUint16(node.children.length)
     for (const child of node.children) {
       treeRecursive(w, child)
     }
   } else {
-    w.writeInt16(0)
+    w.writeUint16(0)
   }
   
 }

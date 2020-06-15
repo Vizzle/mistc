@@ -1,5 +1,6 @@
 import { Value, ValueType, Length, ActionList, Expression, PairList } from "./compiler"
 import { ExpressionNode, LiteralNode, IdentifierNode, ArrayExpressionNode, ObjectExpressionNode, ConditionalExpressionNode, UnaryExpressionNode, getUnaryOpText, BinaryExpressionNode, getBinaryOpText, SubscriptExpressionNode, FunctionExpressionNode, LambdaExpressionNode, ParenNode, UnaryOp, BinaryOp } from "../exp/parser"
+import { TextEncoder } from "util"
 
 enum ExpCode {
   NONE,
@@ -40,54 +41,94 @@ enum ExpCode {
 }
 
 export class Writer {
-  private buf: number[] = []
+  private buf: Uint8Array
+  private dv: DataView
+  private offset: number
+  private littleEndian: boolean
+
+  constructor() {
+    this.buf = new Uint8Array(100)
+    this.dv = new DataView(this.buf.buffer)
+    this.offset = 0
+    this.littleEndian = false
+  }
 
   public data() {
-    return this.buf
+    return this.buf.slice(0, this.offset)
   }
 
-  public writeChars(str: string) {
-    for (let i = 0; i < str.length; i++) {
-      this.writeByte(str.charCodeAt(i))
+  public writeChars(str: string, writeLength = false) {
+    const data = new TextEncoder().encode(str)
+
+    if (writeLength) {
+      const length = data.length
+      if (length >= 0xff) {
+        this.writeUint8(0xff)
+        this.writeUint32(length)
+      }
+      else {
+        this.writeUint8(length)
+      }
     }
+
+    this.ensure(data.length)
+    this.buf.set(data, this.offset)
+    this.offset += data.length
   }
 
-  public writeByte(byte: number) {
-    this.buf.push(byte)
+  public writeArray(arr: Uint8Array) {
+    this.ensure(arr.length)
+    this.buf.set(arr, this.offset)
+    this.offset += arr.length
   }
 
-  public writeInt32(n: number) {
-    this.writeInt(n, 4)
+  public writeInt8(n: number) {
+    this.ensure(1)
+    this.dv.setInt8(this.offset, n)
+    this.offset += 1
+  }
+
+  public writeUint8(n: number) {
+    this.ensure(1)
+    this.dv.setUint8(this.offset, n)
+    this.offset += 1
   }
 
   public writeInt16(n: number) {
-    this.writeInt(n, 2)
+    this.ensure(2)
+    this.dv.setInt16(this.offset, n, this.littleEndian)
+    this.offset += 2
   }
 
-  public writeArray(arr: number[]) {
-    this.buf.push(...arr)
+  public writeUint16(n: number) {
+    this.ensure(2)
+    this.dv.setUint16(this.offset, n, this.littleEndian)
+    this.offset += 2
+  }
+
+  public writeInt32(n: number) {
+    this.ensure(4)
+    this.dv.setInt32(this.offset, n, this.littleEndian)
+    this.offset += 4
+  }
+
+  public writeUint32(n: number) {
+    this.ensure(4)
+    this.dv.setUint32(this.offset, n, this.littleEndian)
+    this.offset += 4
   }
 
   public writeDouble(n: number) {
-    const buffer = new ArrayBuffer(8);
-    const view = new DataView(buffer)
-    view.setFloat64(0, n, false)
-    this.writeArray(Array.from(new Int8Array(buffer)))
+    this.ensure(8)
+    this.dv.setFloat64(this.offset, n, this.littleEndian)
+    this.offset += 8
   }
 
   public writeValue(c: Value, valueCallback: (obj: string) => number) {
-    this.writeByte(c.type)
+    this.writeUint8(c.type)
     switch (c.type) {
       case ValueType.String: {
-        const str = c.value as string
-        if (str.length >= 0xff) {
-          this.writeByte(0xff)
-          this.writeInt32(str.length)
-        }
-        else {
-          this.writeByte(str.length)
-        }
-        this.writeChars(str)
+        this.writeChars(c.value as string, true)
         break
       }
       case ValueType.Number: {
@@ -101,13 +142,13 @@ export class Writer {
         break
       }
       case ValueType.Color: {
-        this.writeInt32(c.value as number)
+        this.writeUint32(c.value as number)
         break
       }
       case ValueType.Length: {
         const length = c.value as Length
         this.writeDouble(length.value)
-        this.writeByte(length.unit)
+        this.writeUint8(length.unit)
         break
       }
       case ValueType.Action: {
@@ -115,7 +156,7 @@ export class Writer {
         break
       }
       case ValueType.Enum: {
-        this.writeInt16(c.value as number)
+        this.writeUint16(c.value as number)
         break
       }
       case ValueType.Expression: {
@@ -129,10 +170,10 @@ export class Writer {
   }
 
   public writePairList(pairList: PairList) {
-    this.writeInt16(pairList.length)
+    this.writeUint16(pairList.length)
     for (const item of pairList) {
-      this.writeInt16(item.key)
-      this.writeInt16(item.value)
+      this.writeUint16(item.key)
+      this.writeUint16(item.value)
     }
   }
 
@@ -142,7 +183,7 @@ export class Writer {
 
   private writeExpBin(node: ExpressionNode | null | undefined, valueCallback: (obj: string) => number) {
     if (!node) {
-      this.writeByte(ExpCode.NONE)
+      this.writeUint8(ExpCode.NONE)
       return
     }
 
@@ -152,100 +193,100 @@ export class Writer {
       if (index <= 0) {
         throw new Error(`找不到字符串常量 ${str}`)
       }
-      this.writeInt16(index)
+      this.writeUint16(index)
     }
 
     if (node instanceof LiteralNode) {
       const value = node.value
       if (typeof value === 'number') {
         if (value >= -128 && value <= 127 && parseInt(value + '') === value) {
-          this.writeByte(ExpCode.INT8)
-          this.writeByte(value)
+          this.writeUint8(ExpCode.INT8)
+          this.writeInt8(value)
         }
         else {
-          this.writeByte(ExpCode.NUM)
+          this.writeUint8(ExpCode.NUM)
           this.writeDouble(value)
         }
       }
       else if (typeof value === 'string') {
-        this.writeByte(ExpCode.STR)
+        this.writeUint8(ExpCode.STR)
         writeString(value)
       }
       else if (typeof value === 'boolean') {
-        this.writeByte(ExpCode.BOOL)
-        this.writeByte(value ? 1 : 0)
+        this.writeUint8(ExpCode.BOOL)
+        this.writeUint8(value ? 1 : 0)
       }
       else if (value === null || value === undefined) {
-        this.writeByte(ExpCode.NULL)
+        this.writeUint8(ExpCode.NULL)
       }
       else {
         throw new Error('不支持的常量类型')
       }
     }
     else if (node instanceof IdentifierNode) {
-      this.writeByte(ExpCode.ID)
+      this.writeUint8(ExpCode.ID)
       writeString(node.identifier)
     }
     else if (node instanceof ArrayExpressionNode) {
-      this.writeByte(ExpCode.ARR)
-      this.writeInt32(node.list.length)
+      this.writeUint8(ExpCode.ARR)
+      this.writeUint32(node.list.length)
       for (const c of node.list) {
         writeExpBin(c)
       }
     }
     else if (node instanceof ObjectExpressionNode) {
-      this.writeByte(ExpCode.OBJ)
-      this.writeInt32(node.list.length)
+      this.writeUint8(ExpCode.OBJ)
+      this.writeUint32(node.list.length)
       for (const c of node.list) {
         writeExpBin(c[0])
         writeExpBin(c[1])
       }
     }
     else if (node instanceof ConditionalExpressionNode) {
-      this.writeByte(ExpCode.COND)
+      this.writeUint8(ExpCode.COND)
       writeExpBin(node.condition)
       writeExpBin(node.truePart)
       writeExpBin(node.falsePart)
     }
     else if (node instanceof UnaryExpressionNode) {
       switch (node.operator) {
-        case UnaryOp.Not: this.writeByte(ExpCode.NOT); break
-        case UnaryOp.Negative: this.writeByte(ExpCode.NEG); break
-        case UnaryOp.Positive: this.writeByte(ExpCode.POS); break
+        case UnaryOp.Not: this.writeUint8(ExpCode.NOT); break
+        case UnaryOp.Negative: this.writeUint8(ExpCode.NEG); break
+        case UnaryOp.Positive: this.writeUint8(ExpCode.POS); break
         default: throw new Error('不支持的一元运算符')
       }
       writeExpBin(node.operand)
     }
     else if (node instanceof BinaryExpressionNode) {
       switch (node.operator) {
-        case BinaryOp.Add: this.writeByte(ExpCode.ADD); break
-        case BinaryOp.Sub: this.writeByte(ExpCode.SUB); break
-        case BinaryOp.Mul: this.writeByte(ExpCode.MUL); break
-        case BinaryOp.Div: this.writeByte(ExpCode.DIV); break
-        case BinaryOp.Mod: this.writeByte(ExpCode.MOD); break
-        case BinaryOp.GreaterThan: this.writeByte(ExpCode.GT); break
-        case BinaryOp.GreaterOrEqual: this.writeByte(ExpCode.GTE); break
-        case BinaryOp.LessThan: this.writeByte(ExpCode.LT); break
-        case BinaryOp.LessOrEqual: this.writeByte(ExpCode.LTE); break
-        case BinaryOp.Equal: this.writeByte(ExpCode.EQ); break
-        case BinaryOp.NotEqual: this.writeByte(ExpCode.NEQ); break
-        case BinaryOp.EqualTriple: this.writeByte(ExpCode.EQT); break
-        case BinaryOp.NotEqualTriple: this.writeByte(ExpCode.NEQT); break
-        case BinaryOp.And: this.writeByte(ExpCode.AND); break
-        case BinaryOp.Or: this.writeByte(ExpCode.OR); break
+        case BinaryOp.Add: this.writeUint8(ExpCode.ADD); break
+        case BinaryOp.Sub: this.writeUint8(ExpCode.SUB); break
+        case BinaryOp.Mul: this.writeUint8(ExpCode.MUL); break
+        case BinaryOp.Div: this.writeUint8(ExpCode.DIV); break
+        case BinaryOp.Mod: this.writeUint8(ExpCode.MOD); break
+        case BinaryOp.GreaterThan: this.writeUint8(ExpCode.GT); break
+        case BinaryOp.GreaterOrEqual: this.writeUint8(ExpCode.GTE); break
+        case BinaryOp.LessThan: this.writeUint8(ExpCode.LT); break
+        case BinaryOp.LessOrEqual: this.writeUint8(ExpCode.LTE); break
+        case BinaryOp.Equal: this.writeUint8(ExpCode.EQ); break
+        case BinaryOp.NotEqual: this.writeUint8(ExpCode.NEQ); break
+        case BinaryOp.EqualTriple: this.writeUint8(ExpCode.EQT); break
+        case BinaryOp.NotEqualTriple: this.writeUint8(ExpCode.NEQT); break
+        case BinaryOp.And: this.writeUint8(ExpCode.AND); break
+        case BinaryOp.Or: this.writeUint8(ExpCode.OR); break
         default: throw new Error('不支持的二元运算符')
       }
       writeExpBin(node.operand1)
       writeExpBin(node.operand2)
     }
     else if (node instanceof SubscriptExpressionNode) {
-      this.writeByte(ExpCode.IDX)
+      this.writeUint8(ExpCode.IDX)
       writeExpBin(node.target)
       writeExpBin(node.subscript)
     }
     else if (node instanceof FunctionExpressionNode) {
-      this.writeByte(ExpCode.FUNC)
-      this.writeByte(node.parameters ? node.parameters.length : 255)
+      this.writeUint8(ExpCode.FUNC)
+      this.writeUint8(node.parameters ? node.parameters.length : 255)
       writeString(node.action.identifier)
       writeExpBin(node.target)
       for (const c of node.parameters || []) {
@@ -253,8 +294,8 @@ export class Writer {
       }
     }
     else if (node instanceof LambdaExpressionNode) {
-      this.writeByte(ExpCode.LAMBDA)
-      this.writeByte(1)
+      this.writeUint8(ExpCode.LAMBDA)
+      this.writeUint8(1)
       writeString(node.parameter.identifier)
       writeExpBin(node.expression)
     }
@@ -267,21 +308,24 @@ export class Writer {
   }
 
   private writeActionList(actList: ActionList) {
-    this.writeByte(actList.length)
+    this.writeUint8(actList.length)
     for (const act of actList) {
-      this.writeInt16(act.if)
-      this.writeInt16(act.type)
-      this.writeInt16(act.params)
-      this.writeInt16(act.result)
+      this.writeUint16(act.if)
+      this.writeUint16(act.type)
+      this.writeUint16(act.params)
+      this.writeUint16(act.result)
       this.writeActionList(act.success)
       this.writeActionList(act.error)
       this.writeActionList(act.finish)
     }
   }
 
-  private writeInt(n: number, bytes: number) {
-    for (let i = bytes - 1; i >= 0; i--) {
-      this.writeByte((n >> (i * 8)) & 0xff)
+  private ensure(bytes: number) {
+    if (this.offset + bytes > this.buf.length) {
+      const oldBuf = this.buf
+      this.buf = new Uint8Array((this.offset + bytes) * 2)
+      this.buf.set(oldBuf)
+      this.dv = new DataView(this.buf.buffer)
     }
   }
 

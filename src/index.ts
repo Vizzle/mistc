@@ -23,7 +23,7 @@ export async function compile(file: string, options: CompileOptions = { minify: 
   const result = await inlineComponents(file, content,  { inlinedMap: {}, stack: [file], file , platform : options.platform, debug : options.debug})
   convertExpressions(result)
   if (options.binary) {
-    return String.fromCharCode(...compileToBinary(result))
+    return compileToBinary(result)
   }
   return JSON.stringify(result, null, options.minify ? undefined : 2)
 }
