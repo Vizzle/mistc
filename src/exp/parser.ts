@@ -285,8 +285,10 @@ export class ObjectExpressionNode extends ExpressionNode {
     }
 
     childNodes(): ExpressionNode[] {
-        // currently the key must be an string literal, not considered as an node
-        return this.list.map(pair => pair[1]);
+        return this.list.reduce((p, c) => (p.push(c[0], c[1]), p), [] as ExpressionNode[])
+
+        // // currently the key must be an string literal, not considered as an node
+        // return this.list.map(pair => pair[1]);
     }
 }
 
@@ -353,6 +355,10 @@ export class SubscriptExpressionNode extends ExpressionNode {
         this.target = target;
         this.subscript = subscript
     }
+
+    childNodes(): ExpressionNode[] {
+        return [this.target, this.subscript]
+    }
 }
 
 export class FunctionExpressionNode extends ExpressionNode {
@@ -390,7 +396,7 @@ export class LambdaExpressionNode extends ExpressionNode {
     }
     
     childNodes(): ExpressionNode[] {
-        return [this.parameter, this.expression]
+        return [this.expression]
     }
 }
 
@@ -805,8 +811,8 @@ export class Parser {
     }
 }
 
-export function visitNode(node: ExpressionNode, visitor: (node: ExpressionNode) => void) {
-    visitor(node)
+export function visitNode(node: ExpressionNode, visitor: (node: ExpressionNode) => void | boolean) {
+    if (visitor(node)) return
     for (const child of node.childNodes()) {
         visitNode(child, visitor)
     }

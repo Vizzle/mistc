@@ -4,6 +4,7 @@ import { binaryCompile, CompilationResult, Node } from "./compiler"
 export function compileToBinary(tpl: any) {
   const w = new Writer()
   const r = binaryCompile(tpl)
+  // console.log(JSON.stringify(r, undefined, 2))
 
   header(w)
   chunk(w, r, 'VALS', values)
@@ -45,7 +46,7 @@ function info(w: Writer, r: CompilationResult) {
 function values(w: Writer, r: CompilationResult) {
   w.writeInt16(r.values.length)
   for (const c of r.values) {
-    w.writeValue(c)
+    w.writeValue(c, v => r.values.findIndex(obj => obj.value === v))
   }
 }
 

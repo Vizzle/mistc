@@ -1,4 +1,4 @@
-import { ExpressionNode } from "../exp/parser"
+import { ExpressionNode, visitNode, IdentifierNode, LiteralNode, FunctionExpressionNode, LambdaExpressionNode } from "../exp/parser"
 import { BinaryEnv, KeyType } from "./defines"
 import { parseExpression, printNode } from "../convertExpressions"
 import { parseLength, parseColor } from "./utils"
@@ -226,6 +226,31 @@ export function binaryCompile(tpl: any): CompilationResult {
     if (index >= 0) {
       return index
     }
+
+    if (value.type === ValueType.Expression) {
+      const strings: string[] = []
+      visitNode((value.value as Expression).node, node => {
+        if (node instanceof IdentifierNode) {
+          strings.push(node.identifier)
+        }
+        else if (node instanceof LiteralNode) {
+          if (typeof node.value === 'string') {
+            strings.push(node.value)
+          }
+        }
+        else if (node instanceof FunctionExpressionNode) {
+          strings.push(node.action.identifier)
+        }
+        else if (node instanceof LambdaExpressionNode) {
+          strings.push(node.parameter.identifier)
+        }
+      })
+      
+      for (const value of strings) {
+        const _ = getValueIndex(value)
+      }
+    }
+
     return values.push(value) - 1
   }
 

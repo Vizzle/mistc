@@ -5,8 +5,7 @@ enum ExpCode {
   NONE,
   INT8,   // [int8]
   NUM,    // [double64]
-  STR,    // [uint8, chars]
-  STRL,   // [uint32, chars]
+  STR,    // [uint16] ref of value chunk
   BOOL,   // [int8]
   NULL,   // []
   ARR,    // [uint32, exps]
@@ -15,7 +14,6 @@ enum ExpCode {
   FUNC,   // [uint8, id[uint8, chars], target_exp, param_exps]
   COND,   // [cond_exp, true_exp, false_exp]
   LAMBDA, // [uint8, param_ids, exp]
-  STRS,   // [uint8, exps]  list of expressions computed to a string
 
   // [exp1]  unary operators
   NEG = 50, // -
@@ -77,7 +75,7 @@ export class Writer {
     this.writeArray(Array.from(new Int8Array(buffer)))
   }
 
-  public writeValue(c: Value) {
+  public writeValue(c: Value, valueCallback: (obj: string) => number) {
     this.writeByte(c.type)
     switch (c.type) {
       case ValueType.String: {
@@ -121,7 +119,7 @@ export class Writer {
         break
       }
       case ValueType.Expression: {
-        this.writeExpression(c.value as Expression)
+        this.writeExpression(c.value as Expression, valueCallback)
         break
       }
       default: {
@@ -138,14 +136,23 @@ export class Writer {
     }
   }
 
-  private writeExpression(exp: Expression) {
-    this.writeExpBin(exp.node)
+  private writeExpression(exp: Expression, valueCallback: (obj: string) => number) {
+    this.writeExpBin(exp.node, valueCallback)
   }
 
-  private writeExpBin(node: ExpressionNode | null | undefined) {
+  private writeExpBin(node: ExpressionNode | null | undefined, valueCallback: (obj: string) => number) {
     if (!node) {
       this.writeByte(ExpCode.NONE)
       return
+    }
+
+    const writeExpBin = (node: ExpressionNode | null | undefined) => this.writeExpBin(node, valueCallback)
+    const writeString = (str: string) => {
+      const index = valueCallback(str)
+      if (index <= 0) {
+        throw new Error(`找不到字符串常量 ${str}`)
+      }
+      this.writeInt16(index)
     }
 
     if (node instanceof LiteralNode) {
@@ -161,16 +168,8 @@ export class Writer {
         }
       }
       else if (typeof value === 'string') {
-        if (value.length <= 255) {
-          this.writeByte(ExpCode.STR)
-          this.writeByte(value.length)
-          this.writeChars(value)
-        }
-        else {
-          this.writeByte(ExpCode.STRL)
-          this.writeInt32(value.length)
-          this.writeChars(value)
-        }
+        this.writeByte(ExpCode.STR)
+        writeString(value)
       }
       else if (typeof value === 'boolean') {
         this.writeByte(ExpCode.BOOL)
@@ -185,28 +184,28 @@ export class Writer {
     }
     else if (node instanceof IdentifierNode) {
       this.writeByte(ExpCode.ID)
-      this.writeIdentifier(node.identifier)
+      writeString(node.identifier)
     }
     else if (node instanceof ArrayExpressionNode) {
       this.writeByte(ExpCode.ARR)
       this.writeInt32(node.list.length)
       for (const c of node.list) {
-        this.writeExpBin(c)
+        writeExpBin(c)
       }
     }
     else if (node instanceof ObjectExpressionNode) {
       this.writeByte(ExpCode.OBJ)
       this.writeInt32(node.list.length)
       for (const c of node.list) {
-        this.writeExpBin(c[0])
-        this.writeExpBin(c[1])
+        writeExpBin(c[0])
+        writeExpBin(c[1])
       }
     }
     else if (node instanceof ConditionalExpressionNode) {
       this.writeByte(ExpCode.COND)
-      this.writeExpBin(node.condition)
-      this.writeExpBin(node.truePart)
-      this.writeExpBin(node.falsePart)
+      writeExpBin(node.condition)
+      writeExpBin(node.truePart)
+      writeExpBin(node.falsePart)
     }
     else if (node instanceof UnaryExpressionNode) {
       switch (node.operator) {
@@ -215,7 +214,7 @@ export class Writer {
         case UnaryOp.Positive: this.writeByte(ExpCode.POS); break
         default: throw new Error('不支持的一元运算符')
       }
-      this.writeExpBin(node.operand)
+      writeExpBin(node.operand)
     }
     else if (node instanceof BinaryExpressionNode) {
       switch (node.operator) {
@@ -236,43 +235,35 @@ export class Writer {
         case BinaryOp.Or: this.writeByte(ExpCode.OR); break
         default: throw new Error('不支持的二元运算符')
       }
-      this.writeExpBin(node.operand1)
-      this.writeExpBin(node.operand2)
+      writeExpBin(node.operand1)
+      writeExpBin(node.operand2)
     }
     else if (node instanceof SubscriptExpressionNode) {
-      this.writeByte(ExpCode.SUB)
-      this.writeExpBin(node.target)
-      this.writeExpBin(node.subscript)
+      this.writeByte(ExpCode.IDX)
+      writeExpBin(node.target)
+      writeExpBin(node.subscript)
     }
     else if (node instanceof FunctionExpressionNode) {
       this.writeByte(ExpCode.FUNC)
       this.writeByte(node.parameters ? node.parameters.length : 255)
-      this.writeIdentifier(node.action.identifier)
-      this.writeExpBin(node.target)
+      writeString(node.action.identifier)
+      writeExpBin(node.target)
       for (const c of node.parameters || []) {
-        this.writeExpBin(c)
+        writeExpBin(c)
       }
     }
     else if (node instanceof LambdaExpressionNode) {
       this.writeByte(ExpCode.LAMBDA)
       this.writeByte(1)
-      this.writeIdentifier(node.parameter.identifier)
-      this.writeExpBin(node.expression)
+      writeString(node.parameter.identifier)
+      writeExpBin(node.expression)
     }
     else if (node instanceof ParenNode) {
-      this.writeExpBin(node.expression)
+      writeExpBin(node.expression)
     }
     else {
       throw new Error(`unknown node`)
     }
-  }
-
-  private writeIdentifier(id: string) {
-    if (id.length > 255) {
-      throw new Error('标识符长度不能大于 255')
-    }
-    this.writeByte(id.length)
-    this.writeChars(id)
   }
 
   private writeActionList(actList: ActionList) {
