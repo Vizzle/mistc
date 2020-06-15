@@ -96,6 +96,9 @@ export function binaryCompile(tpl: any): CompilationResult {
   const nodes: Node[] = []
   const env = new BinaryEnv(0)
 
+  // 第一个 value 始终为 none
+  values.push({ type: ValueType.None })
+
   const createValue = (value: any, type: KeyType): Value => {
     const assertType = (targetType: KeyType) => {
       if (type !== targetType && type !== KeyType.Any) {
