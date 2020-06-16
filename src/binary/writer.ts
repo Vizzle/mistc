@@ -1,4 +1,4 @@
-import { Value, ValueType, Length, ActionList, Expression, PairList } from "./compiler"
+import { Value, ValueType, Length, ActionList, Expression, PairList, Unit } from "./compiler"
 import { ExpressionNode, LiteralNode, IdentifierNode, ArrayExpressionNode, ObjectExpressionNode, ConditionalExpressionNode, UnaryExpressionNode, getUnaryOpText, BinaryExpressionNode, getBinaryOpText, SubscriptExpressionNode, FunctionExpressionNode, LambdaExpressionNode, ParenNode, UnaryOp, BinaryOp } from "../exp/parser"
 import { TextEncoder } from "util"
 
@@ -147,8 +147,10 @@ export class Writer {
       }
       case ValueType.Length: {
         const length = c.value as Length
-        this.writeDouble(length.value)
         this.writeUint8(length.unit)
+        if (length.unit < Unit.auto) {
+          this.writeDouble(length.value)
+        }
         break
       }
       case ValueType.Action: {

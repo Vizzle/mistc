@@ -32,6 +32,9 @@ export enum Unit {
   in,
   pc,
   pt,
+
+  auto = 100,
+  content,
 }
 
 export interface Length {
