@@ -64,7 +64,7 @@ export class Writer {
       const length = data.length
       if (length >= 0xff) {
         this.writeUint8(0xff)
-        this.writeUint32(length)
+        this.writeInt32(length)
       }
       else {
         this.writeUint8(length)
@@ -112,7 +112,7 @@ export class Writer {
     this.offset += 4
   }
 
-  public writeUint32(n: number) {
+  public writeColor(n: number) {
     this.ensure(4)
     this.dv.setUint32(this.offset, n, this.littleEndian)
     this.offset += 4
@@ -142,7 +142,7 @@ export class Writer {
         break
       }
       case ValueType.Color: {
-        this.writeUint32(c.value as number)
+        this.writeColor(c.value as number)
         break
       }
       case ValueType.Length: {
@@ -229,14 +229,14 @@ export class Writer {
     }
     else if (node instanceof ArrayExpressionNode) {
       this.writeUint8(ExpCode.ARR)
-      this.writeUint32(node.list.length)
+      this.writeUint16(node.list.length)
       for (const c of node.list) {
         writeExpBin(c)
       }
     }
     else if (node instanceof ObjectExpressionNode) {
       this.writeUint8(ExpCode.OBJ)
-      this.writeUint32(node.list.length)
+      this.writeUint16(node.list.length)
       for (const c of node.list) {
         writeExpBin(c[0])
         writeExpBin(c[1])

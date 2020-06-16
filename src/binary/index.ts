@@ -29,7 +29,7 @@ function chunk(w: Writer, r: CompilationResult, chunkName: string, chunkCallback
   const chunkWriter = new Writer()
   chunkCallback(chunkWriter, r)
   const chuckData = chunkWriter.data()
-  w.writeUint32(chuckData.length + 8)
+  w.writeInt32(chuckData.length + 8)
   w.writeChars(chunkName)
   w.writeArray(chuckData)
 }
