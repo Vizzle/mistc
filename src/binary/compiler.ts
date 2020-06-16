@@ -81,11 +81,11 @@ export interface Node {
 export interface CompilationResult {
   info: {
     controller: number
-    state: PairList
-    data: PairList
+    state: number
+    data: number
     notifications: PairList
     actions: PairList
-    extra: PairList
+    extra: number
   }
   nodes: Node[]
   values: Value[]
@@ -98,6 +98,24 @@ export function binaryCompile(tpl: any): CompilationResult {
 
   // 第一个 value 始终为 none
   values.push({ type: ValueType.None })
+
+  const parseAction = (obj: any): ActionList => {
+    if (obj instanceof Array) {
+      return obj.map(parseAction).reduce((p, c) => (p.push(...c), p), <ActionList>[])
+    }
+    else {
+      const action: Action = {
+        if: getValueIndex(obj.if),
+        type: getValueIndex(obj.type),
+        params: getValueIndex(obj.params),
+        result: getValueIndex(obj.result),
+        success: parseAction(obj.success || []),
+        error: parseAction(obj.error || []),
+        finish: parseAction(obj.finish || []),
+      }
+      return [action]
+    }
+  }
 
   const createValue = (value: any, type: KeyType): Value => {
     const assertType = (targetType: KeyType) => {
@@ -176,6 +194,14 @@ export function binaryCompile(tpl: any): CompilationResult {
     }
     else if (typeof value === 'object') {
       assertType(KeyType.Action)
+
+      if (type === KeyType.Action) {
+        return {
+          type: ValueType.Action,
+          value: parseAction(value),
+        }
+      }
+
       const node = parseExpression(JSON.stringify(value, (_, v) => {
         if (typeof v === 'string' && v.startsWith('$:')) {
           return printNode(parseExpression(v.substr(2)))
@@ -296,7 +322,8 @@ export function binaryCompile(tpl: any): CompilationResult {
         node.properties.push({ key: info.index, value: getValueIndex(style[key], info.type) })
       }
       else {
-        node.extra.push({ key: getValueIndex(key), value: getValueIndex(style[key]) })
+        const isEvent = key.startsWith('on-')
+        node.extra.push({ key: getValueIndex(key), value: getValueIndex(style[key], isEvent ? KeyType.Action : KeyType.Any) })
       }
     }
 
@@ -316,14 +343,24 @@ export function binaryCompile(tpl: any): CompilationResult {
 
   convertNode(tpl.layout)
 
+  const notifications = tpl.notifications || {}
+  const actions = tpl.actions || {}
+
+  const extra = { ...tpl }
+  delete extra.controller
+  delete extra.state
+  delete extra.data
+  delete extra.notifications
+  delete extra.actions
+
   return {
     info: {
       controller: getValueIndex(tpl.controller),
-      state: [],
-      data: [],
-      notifications: [],
-      actions: [],
-      extra: [],
+      state: getValueIndex(tpl.state),
+      data: getValueIndex(tpl.data),
+      notifications: Object.keys(notifications).map(k => ({ key: getValueIndex(k), value: getValueIndex(notifications[k], KeyType.Action) })),
+      actions: Object.keys(actions).map(k => ({ key: getValueIndex(k), value: getValueIndex(actions[k], KeyType.Action) })),
+      extra: getValueIndex(extra),
     },
     nodes: nodes,
     values: values,

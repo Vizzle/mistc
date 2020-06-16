@@ -36,11 +36,11 @@ function chunk(w: Writer, r: CompilationResult, chunkName: string, chunkCallback
 
 function info(w: Writer, r: CompilationResult) {
   w.writeUint16(r.info.controller)
-  w.writePairList(r.info.state)
-  w.writePairList(r.info.data)
+  w.writeUint16(r.info.state)
+  w.writeUint16(r.info.data)
   w.writePairList(r.info.notifications)
   w.writePairList(r.info.actions)
-  w.writePairList(r.info.extra)
+  w.writeUint16(r.info.extra)
 }
 
 function values(w: Writer, r: CompilationResult) {
