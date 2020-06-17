@@ -202,12 +202,14 @@ export function binaryCompile(tpl: any): CompilationResult {
         }
       }
 
-      const node = parseExpression(JSON.stringify(value, (_, v) => {
+      // 处理内部的表达式 { "key": "$:exp" } => { "key": exp }
+      const expStr = JSON.stringify(value, (_, v) => {
         if (typeof v === 'string' && v.startsWith('$:')) {
-          return printNode(parseExpression(v.substr(2)))
+          return '#<<' + printNode(parseExpression(v.substr(2))) + '>>#'
         }
         return v
-      }))
+      }).replace(/"#<<|>>#"/g, '')
+      const node = parseExpression(expStr)
 
       return {
         type: ValueType.Expression,
