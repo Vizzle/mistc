@@ -357,6 +357,7 @@ export function binaryCompile(tpl: any): CompilationResult {
   delete extra.data
   delete extra.notifications
   delete extra.actions
+  delete extra.layout
 
   return {
     info: {
