@@ -5,6 +5,12 @@ export function parseLength(value: string | number): Length {
     return { unit: Unit.none, value }
   }
   else {
+    if (value === 'auto') {
+      return { unit: Unit.auto, value:0 }
+    } else if (value === 'content') {
+      return { unit: Unit.content, value:0 }
+    }
+
     const num = value.match(/[\d.]+/)?.[0]
     if (num) {
       const suffix = value.substr(num.length)
