@@ -174,6 +174,38 @@ const ENUMS: [string, number][] = [
   ["hybrid", 589],
 ]
 
+/* iOS 枚举定义代码。取消注释以下代码后执行本文件即可输出 */
+/*
+;(function () {
+  const convertKey = (k: string) => k.replace(/-/g, '_')
+
+  const code = `\
+typedef NS_ENUM(NSUInteger, MSBNodeKey) {
+${[...KEYS, ...OUTER_KEYS].map(k => `    MSBNodeKey_${convertKey(k[0])} = ${k[1]},`).join('\n')}
+};
+
+typedef NS_ENUM(NSUInteger, MSBNodeEnum) {
+${ENUMS.map(k => `    MSBNodeEnum_${convertKey(k[0])} = ${k[1]},`).join('\n')}
+};
+`
+  console.log(code)
+})()
+*/
+
+/* Android 枚举定义代码。取消注释以下代码后执行本文件即可输出 */
+/*
+;(function () {
+  const convertKey = (k: string) => k.replace(/-/g, '_')
+
+  const code = `\
+${[...KEYS, ...OUTER_KEYS].map(k => `public static final int NODE_ATTR_${convertKey(k[0])} = ${k[1]};`).join('\n')}
+
+${ENUMS.map(k => `public static final int NODE_ENUM_${convertKey(k[0])} = ${k[1]};`).join('\n')}
+`
+  console.log(code)
+})()
+*/
+
 function check() {
   const allKeys = [...OUTER_KEYS, ...KEYS]
   allKeys.forEach((a, i) => allKeys.forEach((b, j) => {
