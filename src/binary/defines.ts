@@ -173,7 +173,7 @@ const ENUMS: [string, number][] = [
 ]
 
 /* iOS 枚举定义代码。取消注释以下代码后执行本文件即可输出 */
-
+/*
 ;(function () {
   const convertKey = (k: string) => k.replace(/-/g, '_')
 
@@ -188,7 +188,7 @@ ${ENUMS.map(k => `    MSBNodeEnum_${convertKey(k[0])} = ${k[1]},`).join('\n')}
 `
   console.log(code)
 })()
-
+*/
 
 /* Android 枚举定义代码。取消注释以下代码后执行本文件即可输出 */
 /*
