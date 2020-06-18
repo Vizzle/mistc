@@ -286,6 +286,14 @@ export function binaryCompile(tpl: any): CompilationResult {
   }
 
   const convertNode = (obj: any) => {
+    if (typeof obj !== 'object' || obj instanceof Array) {
+      throw new Error('节点格式错误，只能为 object（目前暂不支持节点为表达式）')
+    }
+
+    if (obj.ref) {
+      throw new Error('不支持 ref')
+    }
+
     const node: Node = {
       type: getValueIndex(obj.type),
       gone: getValueIndex(obj.gone),
@@ -295,6 +303,11 @@ export function binaryCompile(tpl: any): CompilationResult {
       vars: [],
       properties: [],
       extra: [],
+    }
+
+    const repeatType = values[node.repeat].type
+    if (!(repeatType === ValueType.None || repeatType === ValueType.Number || repeatType === ValueType.Expression)) {
+      throw new Error(`repeat 属性类型错误 ${repeatType}`)
     }
 
     nodes.push(node)
