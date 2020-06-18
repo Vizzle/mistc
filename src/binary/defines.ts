@@ -141,8 +141,6 @@ const ENUMS: [string, number][] = [
   ["to-bottom-left", 556],
   ["to-top-right", 557],
   ["to-bottom-right", 558],
-  ["", 559],
-  ["base64:", 560],
   ["default", 561],
   ["ascii-capable", 562],
   ["number-punctuation", 563],
@@ -175,7 +173,7 @@ const ENUMS: [string, number][] = [
 ]
 
 /* iOS 枚举定义代码。取消注释以下代码后执行本文件即可输出 */
-/*
+
 ;(function () {
   const convertKey = (k: string) => k.replace(/-/g, '_')
 
@@ -190,7 +188,7 @@ ${ENUMS.map(k => `    MSBNodeEnum_${convertKey(k[0])} = ${k[1]},`).join('\n')}
 `
   console.log(code)
 })()
-*/
+
 
 /* Android 枚举定义代码。取消注释以下代码后执行本文件即可输出 */
 /*
