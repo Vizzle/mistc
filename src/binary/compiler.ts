@@ -332,17 +332,24 @@ export function binaryCompile(tpl: any): CompilationResult {
     delete attrs.gone
     delete attrs.repeat
     delete attrs.vars
+    delete attrs.children
 
     const style = attrs.style || {}
     for (const key in style) {
       const info = env.getKeyInfo(key)
       if (info) {
         node.properties.push({ key: info.index, value: getValueIndex(style[key], info.type) })
+        delete style[key]
       }
-      else {
-        const isEvent = key.startsWith('on-')
-        node.extra.push({ key: getValueIndex(key), value: getValueIndex(style[key], isEvent ? KeyType.Action : KeyType.Any) })
-      }
+    }
+
+    if (attrs.style && Object.keys(attrs.style).length === 0) {
+      delete attrs.style
+    }
+
+    for (const key in attrs) {
+      const isEvent = key.startsWith('on-')
+      node.extra.push({ key: getValueIndex(key), value: getValueIndex(style[key], isEvent ? KeyType.Action : KeyType.Any) })
     }
 
     if (obj.children) {
