@@ -15,6 +15,25 @@ export enum KeyType {
 /**
  * 只能新增 key，不能修改或删除
  */
+const OUTER_KEYS: [string, number, KeyType][] = [
+  ["class", 300, KeyType.Action],
+  ["identifier", 301, KeyType.Action],
+  ["tag", 302, KeyType.Action],
+  ["id", 303, KeyType.Action],
+
+  ["on-tap", 400, KeyType.Action],
+  ["on-tap-once", 401, KeyType.Action],
+  ["on-display", 402, KeyType.Action],
+  ["on-display-once", 403, KeyType.Action],
+  ["on-create", 404, KeyType.Action],
+  ["on-create-once", 405, KeyType.Action],
+  ["on-long-press", 406, KeyType.Action],
+  ["on-long-press-once", 407, KeyType.Action],
+]
+
+/**
+ * 只能新增 key，不能修改或删除
+ */
 const KEYS: [string, number, KeyType][] = [
   ["clip", 0, KeyType.Bool],
   ["alpha", 1, KeyType.Number],
@@ -28,7 +47,6 @@ const KEYS: [string, number, KeyType][] = [
   ["fixed", 9, KeyType.Bool],
   ["is-accessibility-element", 10, KeyType.Bool],
   ["accessibility-label", 11, KeyType.String],
-  ["tag", 12, KeyType.Any],
   ["background-color", 13, KeyType.Color],
   ["border-width", 14, KeyType.Length],
   ["border-color", 15, KeyType.Color],
@@ -60,6 +78,9 @@ const KEYS: [string, number, KeyType][] = [
   ["line-spacing", 41, KeyType.Length],
 ]
 
+/**
+ * 只能新增 key，不能修改或删除
+ */
 const ENUMS: [string, number][] = [
   ["auto", 500],
   ["start", 501],
@@ -154,13 +175,14 @@ const ENUMS: [string, number][] = [
 ]
 
 function check() {
-  KEYS.forEach((a, i) => KEYS.forEach((b, j) => {
+  const allKeys = [...OUTER_KEYS, ...KEYS]
+  allKeys.forEach((a, i) => allKeys.forEach((b, j) => {
     if (i !== j) {
       if (a[0] === b[0]) {
-        throw new Error('Key 定义名称重复')
+        throw new Error(`Key 定义名称重复 ${a[0]}`)
       }
       else if (a[1] === b[1]) {
-        throw new Error('Key 定义索引重复')
+        throw new Error(`Key 定义索引重复 ${a[1]}`)
       }
     }
   }))
@@ -168,10 +190,10 @@ function check() {
   ENUMS.forEach((a, i) => ENUMS.forEach((b, j) => {
     if (i !== j) {
       if (a[0] === b[0]) {
-        throw new Error('Enum 定义名称重复')
+        throw new Error(`Enum 定义名称重复 ${a[0]}`)
       }
       else if (a[1] === b[1]) {
-        throw new Error('Enum 定义索引重复')
+        throw new Error(`Enum 定义索引重复 ${a[1]}`)
       }
     }
   }))
@@ -187,6 +209,7 @@ export class BinaryEnv {
     { type: 'text', version: 0 }
   ]
   private static keyMap = KEYS.reduce((p, c) => (p[c[0]] = c, p), {} as Record<string, typeof KEYS[0]>)
+  private static outerKeyMap = OUTER_KEYS.reduce((p, c) => (p[c[0]] = c, p), {} as Record<string, typeof OUTER_KEYS[0]>)
   private static enumMap = ENUMS.reduce((p, c) => (p[c[0]] = c, p), {} as Record<string, typeof ENUMS[0]>)
 
   private supportedElements: string[]
@@ -200,6 +223,15 @@ export class BinaryEnv {
   }
 
   public getKeyInfo(key: string) {
+    return this.getStyleKeyInfo(key) || this.getOuterKeyInfo(key)
+  }
+
+  public getOuterKeyInfo(key: string) {
+    const info = BinaryEnv.outerKeyMap[key]
+    return info && { type: info[2], index: info[1] }
+  }
+
+  public getStyleKeyInfo(key: string) {
     const info = BinaryEnv.keyMap[key]
     return info && { type: info[2], index: info[1] }
   }

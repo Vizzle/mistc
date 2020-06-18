@@ -336,7 +336,7 @@ export function binaryCompile(tpl: any): CompilationResult {
 
     const style = attrs.style || {}
     for (const key in style) {
-      const info = env.getKeyInfo(key)
+      const info = env.getStyleKeyInfo(key)
       if (info) {
         node.properties.push({ key: info.index, value: getValueIndex(style[key], info.type) })
         delete style[key]
@@ -348,8 +348,23 @@ export function binaryCompile(tpl: any): CompilationResult {
     }
 
     for (const key in attrs) {
-      const isEvent = key.startsWith('on-')
-      node.extra.push({ key: getValueIndex(key), value: getValueIndex(style[key], isEvent ? KeyType.Action : KeyType.Any) })
+      const info = env.getOuterKeyInfo(key)
+      if (info) {
+        node.properties.push({ key: info.index, value: getValueIndex(style[key], info.type) })
+      }
+      else {
+        node.extra.push({ key: getValueIndex(key), value: getValueIndex(style[key], KeyType.Any) })
+      }
+    }
+
+    // 保证这些 key 被编译到前面（且按照这里的顺序）
+    const priorityProperties = ['class', 'margin', 'padding', 'corner-radius']
+    for (const key of priorityProperties.reverse()) {
+      const ref = env.getKeyInfo(key).index
+      const index = node.properties.findIndex(item => item.key === ref)
+      if (index >= 0) {
+        node.properties.unshift(...node.properties.splice(index, 1))
+      }
     }
 
     if (obj.children) {
