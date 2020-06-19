@@ -1,4 +1,4 @@
-import { ExpressionNode, visitNode, IdentifierNode, LiteralNode, FunctionExpressionNode, LambdaExpressionNode } from "../exp/parser"
+import { ExpressionNode, visitNode, IdentifierNode, LiteralNode, FunctionExpressionNode, LambdaExpressionNode, ArrayExpressionNode, ObjectExpressionNode } from "../exp/parser"
 import { BinaryEnv, KeyType } from "./defines"
 import { parseExpression, printNode } from "../convertExpressions"
 import { parseLength, parseColor } from "./utils"
@@ -92,6 +92,26 @@ export interface CompilationResult {
   }
   nodes: Node[]
   values: Value[]
+}
+
+function obj2Exp(obj: any): ExpressionNode {
+  if (obj === undefined || obj === null || typeof obj === 'number' || typeof obj === 'boolean') {
+    return new LiteralNode(obj)
+  }
+  else if (typeof obj === 'string') {
+    if (obj.startsWith('$:')) {
+      return parseExpression(obj.substr(2))
+    }
+    else {
+      return new LiteralNode(obj)
+    }
+  }
+  else if (obj instanceof Array) {
+    return new ArrayExpressionNode(obj.map(obj2Exp))
+  }
+  else {
+    return new ObjectExpressionNode(Object.keys(obj).map(k => [new LiteralNode(k), obj2Exp(obj[k])]))
+  }
 }
 
 export function binaryCompile(tpl: any): CompilationResult {
@@ -206,13 +226,7 @@ export function binaryCompile(tpl: any): CompilationResult {
       }
 
       // 处理内部的表达式 { "key": "$:exp" } => { "key": exp }
-      const expStr = JSON.stringify(value, (_, v) => {
-        if (typeof v === 'string' && v.startsWith('$:')) {
-          return '#<<' + printNode(parseExpression(v.substr(2))) + '>>#'
-        }
-        return v
-      }).replace(/"#<<|>>#"/g, '')
-      const node = parseExpression(expStr)
+      const node = obj2Exp(value)
 
       return {
         type: ValueType.Expression,
