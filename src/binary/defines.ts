@@ -196,7 +196,7 @@ ${ENUMS.map(k => `    MSBNodeEnum_${convertKey(k[0])} = ${k[1]},`).join('\n')}
   const convertKey = (k: string) => k.replace(/-/g, '_')
 
   const code = `\
-${[...KEYS, ...OUTER_KEYS].map(k => `public static final int NODE_ATTR_${convertKey(k[0])} = ${k[1]};`).join('\n')}
+${[...OUTER_KEYS, ...KEYS].map(k => `public static final int NODE_ATTR_${convertKey(k[0])} = ${k[1]};`).join('\n')}
 
 ${ENUMS.map(k => `public static final int NODE_ENUM_${convertKey(k[0])} = ${k[1]};`).join('\n')}
 `
