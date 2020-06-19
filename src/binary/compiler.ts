@@ -350,10 +350,10 @@ export function binaryCompile(tpl: any): CompilationResult {
     for (const key in attrs) {
       const info = env.getOuterKeyInfo(key)
       if (info) {
-        node.properties.push({ key: info.index, value: getValueIndex(style[key], info.type) })
+        node.properties.push({ key: info.index, value: getValueIndex(attrs[key], info.type) })
       }
       else {
-        node.extra.push({ key: getValueIndex(key), value: getValueIndex(style[key], KeyType.Any) })
+        node.extra.push({ key: getValueIndex(key), value: getValueIndex(attrs[key], KeyType.Any) })
       }
     }
 
