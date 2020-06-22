@@ -127,16 +127,31 @@ export function binaryCompile(tpl: any): CompilationResult {
       return obj.map(parseAction).reduce((p, c) => (p.push(...c), p), <ActionList>[])
     }
     else {
-      const action: Action = {
-        if: getValueIndex(obj.if),
-        type: getValueIndex(obj.type),
-        params: getValueIndex(obj.params),
-        result: getValueIndex(obj.result),
-        success: parseAction(obj.success || []),
-        error: parseAction(obj.error || []),
-        finish: parseAction(obj.finish || []),
+      if (obj.type) {
+        const action: Action = {
+          if: getValueIndex(obj.if),
+          type: getValueIndex(obj.type),
+          params: getValueIndex(obj.params),
+          result: getValueIndex(obj.result),
+          success: parseAction(obj.success || []),
+          error: parseAction(obj.error || []),
+          finish: parseAction(obj.finish || []),
+        }
+        return [action]
       }
-      return [action]
+      else {
+        return Object.keys(obj).map(key => {
+          return <Action>{
+            if: 0,
+            type: getValueIndex('invoke'),
+            params: getValueIndex(obj[key]),
+            result: 0,
+            success: [],
+            error: [],
+            finish: []
+          }
+        })
+      }
     }
   }
 
