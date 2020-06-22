@@ -16,10 +16,10 @@ export enum KeyType {
  * 只能新增 key，不能修改或删除
  */
 const OUTER_KEYS: [string, number, KeyType][] = [
-  ["class", 0, KeyType.Action],
-  ["identifier", 1, KeyType.Action],
-  ["tag", 2, KeyType.Action],
-  ["id", 3, KeyType.Action],
+  ["class", 0, KeyType.String],
+  ["identifier", 1, KeyType.String],
+  ["tag", 2, KeyType.Number],
+  ["id", 3, KeyType.String],
 
   ["on-tap", 4, KeyType.Action],
   ["on-tap-once", 5, KeyType.Action],
