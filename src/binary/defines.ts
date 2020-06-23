@@ -76,6 +76,7 @@ const KEYS: [string, number, KeyType][] = [
   ["align-content", 50, KeyType.Enum],
   ["spacing", 51, KeyType.Length],
   ["line-spacing", 52, KeyType.Length],
+  ["lines", 53, KeyType.Number],
 ]
 
 /**
