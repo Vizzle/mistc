@@ -54,7 +54,6 @@ class Context {
 export function constantFoldingTemplate(tpl: any) {
   const ctx = new Context()
 
-
   const constantFoldingObject = (obj: any) => {
     if (obj instanceof ExpressionNode) {
       return constantFolding(obj, ctx)
@@ -116,7 +115,15 @@ export function constantFoldingTemplate(tpl: any) {
   }
 
   for (const key in tpl) {
-    if (key !== 'layout') {
+    if (key === 'templates') {
+      const templates = tpl[key]
+      for (const k in templates) {
+        const tpl = templates[k]
+        tpl.noRegexExp = true
+        constantFoldingTemplate(tpl)
+      }
+    }
+    else if (key !== 'layout') {
       tpl[key] = constantFoldingObject(tpl[key])
     }
   }
