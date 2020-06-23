@@ -1,11 +1,14 @@
 import { ExpressionNode, LiteralNode, IdentifierNode, ArrayExpressionNode, ObjectExpressionNode, ConditionalExpressionNode, UnaryExpressionNode, getUnaryOpText, BinaryExpressionNode, getBinaryOpText, SubscriptExpressionNode, FunctionExpressionNode, LambdaExpressionNode, ParenNode, Parser, compareBinaryOperatorPriority, BinaryOp } from "./exp/parser"
+import { constantFoldingTemplate } from "./constantFolding"
 
 /**
- * 转换模板中的表达式，将 ${} 形式转换为 $: 形式
+ * 转换模板中的表达式，将 ${} 形式转换为 $: 形式。并进行一些表达式优化
  */
 export function convertExpressions(tpl: any) {
   tpl.noRegexExp = true
   convert(tpl)
+
+  constantFoldingTemplate(tpl)
 }
 
 function convert(obj: any) {
@@ -34,7 +37,7 @@ function convertExp(str: string) {
       // 纯表达式
       if (startIndex === 0 && endIndex === str.length - 1) {
         const exp = parseExpression(str.slice(2, -1))
-        return '$:' + printNode(exp)
+        return exp
       }
 
       // 混合表达式，类似于 JS 的模板字符串
@@ -72,9 +75,9 @@ function convertExp(str: string) {
         list.unshift('')
       }
 
-      return '$:' + list.map(item => {
+      const nodes = list.map(item => {
         if (typeof item === 'string') {
-          return printNode(new LiteralNode(item))
+          return new LiteralNode(item)
         }
         else {
           // 优先级低的情况加括号，避免改变运算顺序
@@ -86,11 +89,13 @@ function convertExp(str: string) {
               item = new ParenNode(item)
             }
           }
-          return printNode(item)
+          return item
         }
-      }).join('+')
+      })
+      return nodes.slice(1).reduce((p, c) => new BinaryExpressionNode(BinaryOp.Add, p, c), nodes[0])
     }
   }
+  throw new Error(`no expression founded in ${JSON.stringify(str)}`)
 }
 
 export function parseExpression(str: string) {

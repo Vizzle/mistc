@@ -1,6 +1,7 @@
 import { inlineComponents } from './inlineComponents'
 import { compileToBinary } from './binary'
-import { convertExpressions } from './convertExpressions'
+import { convertExpressions, printNode } from './convertExpressions'
+import { ExpressionNode } from './exp/parser'
 
 interface CompileOptions {
   /**
@@ -25,5 +26,10 @@ export async function compile(file: string, options: CompileOptions = { minify: 
   if (options.binary) {
     return compileToBinary(result)
   }
-  return JSON.stringify(result, null, options.minify ? undefined : 2)
+  return JSON.stringify(result, (_, value) => {
+    if (value instanceof ExpressionNode) {
+      return '$:' + printNode(value)
+    }
+    return value
+  }, options.minify ? undefined : 2)
 }

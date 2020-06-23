@@ -95,16 +95,11 @@ export interface CompilationResult {
 }
 
 function obj2Exp(obj: any): ExpressionNode {
-  if (obj === undefined || obj === null || typeof obj === 'number' || typeof obj === 'boolean') {
+  if (obj === undefined || obj === null || typeof obj === 'number' || typeof obj === 'boolean' || typeof obj === 'string') {
     return new LiteralNode(obj)
   }
-  else if (typeof obj === 'string') {
-    if (obj.startsWith('$:')) {
-      return parseExpression(obj.substr(2))
-    }
-    else {
-      return new LiteralNode(obj)
-    }
+  else if (obj instanceof ExpressionNode) {
+    return obj
   }
   else if (obj instanceof Array) {
     return new ArrayExpressionNode(obj.map(obj2Exp))
@@ -166,15 +161,14 @@ export function binaryCompile(tpl: any): CompilationResult {
       return { type: ValueType.None }
     }
 
-    if (typeof value === 'string') {
-      if (value.startsWith('$:')) {
-        const node = parseExpression(value.substr(2))
-        return {
-          type: ValueType.Expression,
-          value: { node }
-        }
+    if (value instanceof ExpressionNode) {
+      return {
+        type: ValueType.Expression,
+        value: { node: value }
       }
-      else if (type === KeyType.Length) {
+    }
+    else if (typeof value === 'string') {
+      if (type === KeyType.Length) {
         return {
           type: ValueType.Length,
           value: parseLength(value)
@@ -240,7 +234,7 @@ export function binaryCompile(tpl: any): CompilationResult {
         }
       }
 
-      // 处理内部的表达式 { "key": "$:exp" } => { "key": exp }
+      // object 转换为 object literal 表达式
       const node = obj2Exp(value)
 
       return {
