@@ -4,6 +4,7 @@ import { ExpressionNode, LiteralNode, IdentifierNode, ArrayExpressionNode, Objec
  * 转换模板中的表达式，将 ${} 形式转换为 $: 形式
  */
 export function convertExpressions(tpl: any) {
+  tpl.noRegexExp = true
   convert(tpl)
 }
 
