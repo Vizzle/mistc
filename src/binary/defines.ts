@@ -15,20 +15,19 @@ export enum KeyType {
 /**
  * 只能新增 key，不能修改或删除
  */
-const OUTER_KEYS: [string, number, KeyType][] = [
-  ["class", 0, KeyType.String],
-  ["identifier", 1, KeyType.String],
-  ["tag", 2, KeyType.Number],
-  ["id", 3, KeyType.String],
-
-  ["on-tap", 4, KeyType.Action],
-  ["on-tap-once", 5, KeyType.Action],
-  ["on-display", 6, KeyType.Action],
-  ["on-display-once", 7, KeyType.Action],
-  ["on-create", 8, KeyType.Action],
-  ["on-create-once", 9, KeyType.Action],
-  ["on-long-press", 10, KeyType.Action],
-  ["on-long-press-once", 11, KeyType.Action],
+const OUTER_KEYS: [string, number, KeyType, boolean?][] = [
+  ["class", 0, KeyType.String, true],
+  ["identifier", 1, KeyType.String, true],
+  ["tag", 2, KeyType.Number, true],
+  ["id", 3, KeyType.String, true],
+  ["on-tap", 4, KeyType.Action, true],
+  ["on-tap-once", 5, KeyType.Action, true],
+  ["on-display", 6, KeyType.Action, true],
+  ["on-display-once", 7, KeyType.Action, true],
+  ["on-create", 8, KeyType.Action, true],
+  ["on-create-once", 9, KeyType.Action, true],
+  ["on-long-press", 10, KeyType.Action, true],
+  ["on-long-press-once", 11, KeyType.Action, true],
   ["on-complete", 72, KeyType.Action],
   ["on-complete-once", 73, KeyType.Action],
 ]
@@ -36,42 +35,42 @@ const OUTER_KEYS: [string, number, KeyType][] = [
 /**
  * 只能新增 key，不能修改或删除
  */
-const KEYS: [string, number, KeyType][] = [
-  ["clip", 12, KeyType.Bool],
-  ["alpha", 13, KeyType.Number],
-  ["user-interaction-enabled", 14, KeyType.Bool],
-  ["highlight-background-color", 15, KeyType.Color],
-  ["corner-radius", 16, KeyType.Length],
-  ["corner-radius-top-left", 17, KeyType.Length],
-  ["corner-radius-top-right", 18, KeyType.Length],
-  ["corner-radius-bottom-left", 19, KeyType.Length],
-  ["corner-radius-bottom-right", 20, KeyType.Length],
-  ["fixed", 21, KeyType.Bool],
-  ["is-accessibility-element", 22, KeyType.Bool],
-  ["accessibility-label", 23, KeyType.String],
-  ["background-color", 24, KeyType.Color],
-  ["border-width", 25, KeyType.Length],
-  ["border-color", 26, KeyType.Color],
-  ["width", 27, KeyType.Length],
-  ["height", 28, KeyType.Length],
-  ["max-width", 29, KeyType.Length],
-  ["max-height", 30, KeyType.Length],
-  ["min-width", 31, KeyType.Length],
-  ["min-height", 32, KeyType.Length],
-  ["margin", 33, KeyType.Length],
-  ["padding", 34, KeyType.Length],
-  ["margin-left", 35, KeyType.Length],
-  ["margin-right", 36, KeyType.Length],
-  ["margin-top", 37, KeyType.Length],
-  ["margin-bottom", 38, KeyType.Length],
-  ["padding-left", 39, KeyType.Length],
-  ["padding-right", 40, KeyType.Length],
-  ["padding-top", 41, KeyType.Length],
-  ["padding-bottom", 42, KeyType.Length],
-  ["flex-basis", 43, KeyType.Length],
-  ["flex-grow", 44, KeyType.Number],
-  ["flex-shrink", 45, KeyType.Number],
-  ["align-self", 46, KeyType.Enum],
+const KEYS: [string, number, KeyType, boolean?][] = [
+  ["clip", 12, KeyType.Bool, true],
+  ["alpha", 13, KeyType.Number, true],
+  ["user-interaction-enabled", 14, KeyType.Bool, true],
+  ["highlight-background-color", 15, KeyType.Color, true],
+  ["corner-radius", 16, KeyType.Length, true],
+  ["corner-radius-top-left", 17, KeyType.Length, true],
+  ["corner-radius-top-right", 18, KeyType.Length, true],
+  ["corner-radius-bottom-left", 19, KeyType.Length, true],
+  ["corner-radius-bottom-right", 20, KeyType.Length, true],
+  ["fixed", 21, KeyType.Bool, true],
+  ["is-accessibility-element", 22, KeyType.Bool, true],
+  ["accessibility-label", 23, KeyType.String, true],
+  ["background-color", 24, KeyType.Color, true],
+  ["border-width", 25, KeyType.Length, true],
+  ["border-color", 26, KeyType.Color, true],
+  ["width", 27, KeyType.Length, true],
+  ["height", 28, KeyType.Length, true],
+  ["max-width", 29, KeyType.Length, true],
+  ["max-height", 30, KeyType.Length, true],
+  ["min-width", 31, KeyType.Length, true],
+  ["min-height", 32, KeyType.Length, true],
+  ["margin", 33, KeyType.Length, true],
+  ["padding", 34, KeyType.Length, true],
+  ["margin-left", 35, KeyType.Length, true],
+  ["margin-right", 36, KeyType.Length, true],
+  ["margin-top", 37, KeyType.Length, true],
+  ["margin-bottom", 38, KeyType.Length, true],
+  ["padding-left", 39, KeyType.Length, true],
+  ["padding-right", 40, KeyType.Length, true],
+  ["padding-top", 41, KeyType.Length, true],
+  ["padding-bottom", 42, KeyType.Length, true],
+  ["flex-basis", 43, KeyType.Length, true],
+  ["flex-grow", 44, KeyType.Number, true],
+  ["flex-shrink", 45, KeyType.Number, true],
+  ["align-self", 46, KeyType.Enum, true],
   ["direction", 47, KeyType.Enum],
   ["justify-content", 48, KeyType.Enum],
   ["align-items", 49, KeyType.Enum],
@@ -279,12 +278,12 @@ export class BinaryEnv {
 
   public getOuterKeyInfo(key: string) {
     const info = BinaryEnv.outerKeyMap[key]
-    return info && { type: info[2], index: info[1] }
+    return info && { type: info[2], index: info[1], basic: info[3] || false }
   }
 
   public getStyleKeyInfo(key: string) {
     const info = BinaryEnv.keyMap[key]
-    return info && { type: info[2], index: info[1] }
+    return info && { type: info[2], index: info[1], basic: info[3] || false }
   }
 
   public getEnumIndex(str: string) {

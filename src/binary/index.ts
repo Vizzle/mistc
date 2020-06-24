@@ -58,6 +58,7 @@ function nodes(w: Writer, r: CompilationResult) {
     w.writeUint16(node.repeat)
 
     w.writePairList(node.vars)
+    w.writePairList(node.styles)
     w.writePairList(node.properties)
     w.writePairList(node.extra)
   }

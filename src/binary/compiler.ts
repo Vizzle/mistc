@@ -71,6 +71,7 @@ export interface Pair {
 export type PairList = Pair[]
 
 export interface Node {
+  styles: PairList
   properties: PairList
   extra: PairList
   type: number
@@ -324,6 +325,7 @@ export function binaryCompile(tpl: any): CompilationResult {
       index: nodes.length,
       children: [],
       vars: [],
+      styles: [],
       properties: [],
       extra: [],
     }
@@ -361,7 +363,8 @@ export function binaryCompile(tpl: any): CompilationResult {
     for (const key in style) {
       const info = env.getStyleKeyInfo(key)
       if (info) {
-        node.properties.push({ key: info.index, value: getValueIndex(style[key], info.type) })
+        const target = info.basic ? node.styles : node.properties
+        target.push({ key: info.index, value: getValueIndex(style[key], info.type) })
         delete style[key]
       }
     }
@@ -373,7 +376,8 @@ export function binaryCompile(tpl: any): CompilationResult {
     for (const key in attrs) {
       const info = env.getOuterKeyInfo(key)
       if (info) {
-        node.properties.push({ key: info.index, value: getValueIndex(attrs[key], info.type) })
+        const target = info.basic ? node.styles : node.properties
+        target.push({ key: info.index, value: getValueIndex(attrs[key], info.type) })
       }
       else {
         node.extra.push({ key: getValueIndex(key), value: getValueIndex(attrs[key], KeyType.Any) })
