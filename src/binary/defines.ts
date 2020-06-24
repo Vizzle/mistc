@@ -29,6 +29,8 @@ const OUTER_KEYS: [string, number, KeyType][] = [
   ["on-create-once", 9, KeyType.Action],
   ["on-long-press", 10, KeyType.Action],
   ["on-long-press-once", 11, KeyType.Action],
+  ["on-complete", 72, KeyType.Action],
+  ["on-complete-once", 73, KeyType.Action],
 ]
 
 /**
@@ -77,6 +79,24 @@ const KEYS: [string, number, KeyType][] = [
   ["spacing", 51, KeyType.Length],
   ["line-spacing", 52, KeyType.Length],
   ["lines", 53, KeyType.Number],
+  ["html-text", 54, KeyType.String],
+  ["mini-scale-factor", 55, KeyType.Number],
+  ["adjusts-font-size", 56, KeyType.Bool],
+  ["baseline-adjustment", 57, KeyType.Enum],
+  ["alignment", 58, KeyType.Enum],
+  ["vertical-alignment", 59, KeyType.Enum],
+  ["line-break-mode", 60, KeyType.Enum],
+  ["truncation-mode", 61, KeyType.Enum],
+  ["kern", 62, KeyType.Number],
+  ["text", 63, KeyType.String],
+  ["color", 64, KeyType.Color],
+  ["font-size", 65, KeyType.Length],
+  ["font-name", 66, KeyType.String],
+  ["font-style", 67, KeyType.Enum],
+  ["image", 68, KeyType.String],
+  ["image-url", 69, KeyType.String],
+  ["error-image", 70, KeyType.String],
+  ["content-mode", 71, KeyType.Enum],
 ]
 
 /**
@@ -180,7 +200,7 @@ const ENUMS: [string, number][] = [
 
   const code = `\
 typedef NS_ENUM(NSUInteger, MSBNodeKey) {
-${[...OUTER_KEYS, ...KEYS].map(k => `    MSBNodeKey_${convertKey(k[0])} = ${k[1]},`).join('\n')}
+${[...OUTER_KEYS, ...KEYS].sort((a, b) => a[1] - b[1]).map(k => `    MSBNodeKey_${convertKey(k[0])} = ${k[1]},`).join('\n')}
 };
 
 typedef NS_ENUM(NSUInteger, MSBNodeEnum) {
@@ -197,7 +217,7 @@ ${ENUMS.map(k => `    MSBNodeEnum_${convertKey(k[0])} = ${k[1]},`).join('\n')}
   const convertKey = (k: string) => k.replace(/-/g, '_')
 
   const code = `\
-${[...OUTER_KEYS, ...KEYS].map(k => `public static final int NODE_ATTR_${convertKey(k[0])} = ${k[1]};`).join('\n')}
+${[...OUTER_KEYS, ...KEYS].sort((a, b) => a[1] - b[1]).map(k => `public static final int NODE_ATTR_${convertKey(k[0])} = ${k[1]};`).join('\n')}
 
 ${ENUMS.map(k => `public static final int NODE_ENUM_${convertKey(k[0])} = ${k[1]};`).join('\n')}
 `
