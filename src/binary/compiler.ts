@@ -375,7 +375,7 @@ export function binaryCompile(tpl: any): CompilationResult {
 
     for (const key in attrs) {
       const info = env.getOuterKeyInfo(key)
-      if (info) {
+      if (info && (info.basic || env.supportsType(obj.type))) {
         const target = info.basic ? node.styles : node.properties
         target.push({ key: info.index, value: getValueIndex(attrs[key], info.type) })
       }

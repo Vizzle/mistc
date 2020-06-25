@@ -256,7 +256,10 @@ export class BinaryEnv {
     type: string
     version: Version
   }[] = [
-    { type: 'text', version: 0 }
+    { type: 'node', version: 0 },
+    { type: 'stack', version: 0 },
+    { type: 'text', version: 0 },
+    { type: 'image', version: 0 }
   ]
   private static keyMap = KEYS.reduce((p, c) => (p[c[0]] = c, p), {} as Record<string, typeof KEYS[0]>)
   private static outerKeyMap = OUTER_KEYS.reduce((p, c) => (p[c[0]] = c, p), {} as Record<string, typeof OUTER_KEYS[0]>)
@@ -269,7 +272,7 @@ export class BinaryEnv {
   }
 
   public supportsType(type: string) {
-    return this.supportedElements.includes(type)
+    return !type || this.supportedElements.includes(type)
   }
 
   public getKeyInfo(key: string) {
