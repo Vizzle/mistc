@@ -136,17 +136,16 @@ export function binaryCompile(tpl: any): CompilationResult {
         return [action]
       }
       else {
-        return Object.keys(obj).map(key => {
-          return <Action>{
-            if: 0,
-            type: getValueIndex('invoke'),
-            params: getValueIndex(obj[key]),
-            result: 0,
-            success: [],
-            error: [],
-            finish: []
-          }
-        })
+        const action: Action = {
+          if: 0,
+          type: getValueIndex('invoke'),
+          params: getValueIndex(obj),
+          result: 0,
+          success: [],
+          error: [],
+          finish: []
+        }
+        return [action]
       }
     }
   }
