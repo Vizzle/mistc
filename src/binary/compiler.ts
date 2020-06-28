@@ -309,8 +309,12 @@ export function binaryCompile(tpl: any): CompilationResult {
   }
 
   const convertNode = (obj: any) => {
+    if (obj instanceof ExpressionNode) {
+      throw new Error('暂不支持节点为表达式');
+    }
+
     if (typeof obj !== 'object' || obj instanceof Array) {
-      throw new Error('节点格式错误，只能为 object（目前暂不支持节点为表达式）')
+      throw new Error('节点格式错误，只能为 object');
     }
 
     if (obj.ref) {
