@@ -15,6 +15,8 @@ export enum ValueType {
   Color,
   Action,
   Enum,
+  Array,
+  Object,
 }
 
 export enum Unit {
@@ -60,7 +62,7 @@ export interface Expression {
 
 export interface Value {
   type: ValueType
-  value?: number | string | Expression | Length | ActionList
+  value?: number | string | Expression | Length | ActionList | number[] | [number, number][]
 }
 
 export interface Pair {
@@ -93,21 +95,6 @@ export interface CompilationResult {
   }
   nodes: Node[]
   values: Value[]
-}
-
-function obj2Exp(obj: any): ExpressionNode {
-  if (obj === undefined || obj === null || typeof obj === 'number' || typeof obj === 'boolean' || typeof obj === 'string') {
-    return new LiteralNode(obj)
-  }
-  else if (obj instanceof ExpressionNode) {
-    return obj
-  }
-  else if (obj instanceof Array) {
-    return new ArrayExpressionNode(obj.map(obj2Exp))
-  }
-  else {
-    return new ObjectExpressionNode(Object.keys(obj).map(k => [new LiteralNode(k), obj2Exp(obj[k])]))
-  }
 }
 
 export function binaryCompile(tpl: any): CompilationResult {
@@ -224,6 +211,12 @@ export function binaryCompile(tpl: any): CompilationResult {
         type: ValueType.Null,
       }
     }
+    else if (value instanceof Array) {
+      return {
+        type: ValueType.Array,
+        value: value.map(v => getValueIndex(v))
+      }
+    }
     else if (typeof value === 'object') {
       assertType(KeyType.Action)
 
@@ -233,13 +226,11 @@ export function binaryCompile(tpl: any): CompilationResult {
           value: parseAction(value),
         }
       }
-
-      // object 转换为 object literal 表达式
-      const node = obj2Exp(value)
-
-      return {
-        type: ValueType.Expression,
-        value: { node }
+      else {
+        return {
+          type: ValueType.Object,
+          value: Object.keys(value).map(k => <[number, number]>[getValueIndex(k), getValueIndex(value[k])])
+        }
       }
     }
 

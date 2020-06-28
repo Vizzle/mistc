@@ -165,6 +165,23 @@ export class Writer {
         this.writeExpression(c.value as Expression, valueCallback)
         break
       }
+      case ValueType.Array: {
+        const arr = c.value as number[]
+        this.writeUint16(arr.length)
+        for (const v of arr) {
+          this.writeUint16(v)
+        }
+        break
+      }
+      case ValueType.Object: {
+        const obj = c.value as [number, number][]
+        this.writeUint16(obj.length)
+        for (const v of obj) {
+          this.writeUint16(v[0])
+          this.writeUint16(v[1])
+        }
+        break
+      }
       default: {
         throw new Error('不支持的 Value 类型')
       }
