@@ -174,12 +174,7 @@ async function main() {
 }
 
 function handleException(e: any) {
-  if (e instanceof Error) {
-    console.error(e.message)
-  }
-  else {
-    console.error(e)
-  }
+  console.error(e)
   process.exit(1)
 }
 

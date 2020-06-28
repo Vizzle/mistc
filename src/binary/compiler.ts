@@ -95,6 +95,7 @@ export interface CompilationResult {
   }
   nodes: Node[]
   values: Value[]
+  styles: [number, PairList][]
 }
 
 export function binaryCompile(tpl: any): CompilationResult {
@@ -402,6 +403,8 @@ export function binaryCompile(tpl: any): CompilationResult {
     return node
   }
 
+  inlineStylesForTemplate(tpl)
+
   convertNode(tpl.layout)
 
   const notifications = tpl.notifications || {}
@@ -414,6 +417,17 @@ export function binaryCompile(tpl: any): CompilationResult {
   delete extra.notifications
   delete extra.actions
   delete extra.layout
+  delete extra.styles
+
+  const styles: CompilationResult['styles'] = []
+
+  if (tpl.styles) {
+    for (const key in tpl.styles) {
+      const style = tpl.styles[key]
+      const list: PairList = Object.keys(style).map(k => <Pair>{ key: getValueIndex(k), value: getValueIndex(style[k]) })
+      styles.push([getValueIndex(key), list])
+    }
+  }
 
   return {
     info: {
@@ -424,7 +438,50 @@ export function binaryCompile(tpl: any): CompilationResult {
       actions: Object.keys(actions).map(k => ({ key: getValueIndex(k), value: getValueIndex(actions[k], KeyType.Action) })),
       extra: getValueIndex(extra),
     },
-    nodes: nodes,
-    values: values,
+    nodes,
+    values,
+    styles,
+  }
+}
+
+function inlineStylesForTemplate(tpl: any) {
+  if (!tpl.styles) {
+    return
+  }
+  
+  const ctx = {
+    hasUnknownClass: false
+  }
+
+  inlineStyleForNode(tpl.layout, tpl.styles, ctx)
+
+  if (!ctx.hasUnknownClass) {
+    delete tpl.styles
+  }
+}
+
+function inlineStyleForNode(node: any, styles: any, ctx: { hasUnknownClass: boolean }) {
+  if (node instanceof ExpressionNode) {
+    return
+  }
+
+  const cls = node.class
+  if (typeof cls === 'string') {
+    const newStyle = {}
+    const classes = cls.split(' ').filter((s: string) => s)
+    for (const c of classes) {
+      Object.assign(newStyle, styles[c] || {})
+    }
+    Object.assign(newStyle, node.style || {})
+    node.style = newStyle
+    delete node.class
+  }
+  else if (cls instanceof ExpressionNode) {
+    ctx.hasUnknownClass = true
+  }
+
+  const children = node.children
+  if (children && children instanceof Array) {
+    children.forEach(node => inlineStyleForNode(node, styles, ctx))
   }
 }

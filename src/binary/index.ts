@@ -12,6 +12,10 @@ export function compileToBinary(tpl: any) {
   chunk(w, r, 'NODE', nodes)
   chunk(w, r, 'TREE', tree)
 
+  if (r.styles.length > 0) {
+    chunk(w, r, 'STYL', styles)
+  }
+
   return new Buffer(w.data())
 }
 
@@ -66,6 +70,14 @@ function nodes(w: Writer, r: CompilationResult) {
 
 function tree(w: Writer, r: CompilationResult) {
   treeRecursive(w, r.nodes[0])
+}
+
+function styles(w: Writer, r: CompilationResult) {
+  w.writeUint16(r.styles.length)
+  for (const style of r.styles) {
+    w.writeUint16(style[0])
+    w.writePairList(style[1])
+  }
 }
 
 function treeRecursive(w: Writer, node: Node) {
