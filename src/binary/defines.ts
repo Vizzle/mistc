@@ -96,6 +96,7 @@ const KEYS: [string, number, KeyType, boolean?][] = [
   ["image-url", 69, KeyType.String],
   ["error-image", 70, KeyType.String],
   ["content-mode", 71, KeyType.Enum],
+  ["wrap", 74, KeyType.Enum],
 ]
 
 /**
