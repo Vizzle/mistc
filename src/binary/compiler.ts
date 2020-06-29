@@ -262,6 +262,18 @@ export function binaryCompile(tpl: any): CompilationResult {
         return l1.unit === l2.unit && l1.value === l2.value
       case ValueType.Action:
         return false
+      case ValueType.Array: {
+        const arr1 = a.value as number[]
+        const arr2 = b.value as number[]
+        return arr1.length === arr2.length && arr1.every((v, i) => v === arr2[i])
+      }
+      case ValueType.Object: {
+        const arr1 = a.value as [number, number][]
+        const arr2 = b.value as [number, number][]
+        return arr1.length === arr2.length && arr1.every((v, i) => v[0] === arr2[i][0] && v[1] === arr2[i][i])
+      }
+
+        return 
     }
     return false
   }
@@ -326,7 +338,7 @@ export function binaryCompile(tpl: any): CompilationResult {
     }
 
     const repeatType = values[node.repeat].type
-    if (!(repeatType === ValueType.None || repeatType === ValueType.Number || repeatType === ValueType.Expression)) {
+    if (!(repeatType === ValueType.None || repeatType === ValueType.Number || repeatType === ValueType.Expression || repeatType == ValueType.Array)) {
       throw new Error(`repeat 属性类型错误 ${repeatType}`)
     }
 
