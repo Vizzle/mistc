@@ -272,8 +272,6 @@ export function binaryCompile(tpl: any): CompilationResult {
         const arr2 = b.value as [number, number][]
         return arr1.length === arr2.length && arr1.every((v, i) => v[0] === arr2[i][0] && v[1] === arr2[i][i])
       }
-
-        return 
     }
     return false
   }
