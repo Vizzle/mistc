@@ -60,7 +60,7 @@ export function constantFoldingTemplate(tpl: any) {
     }
     else if (typeof obj === 'object') {
       for (const k in obj) {
-        obj[k] = constantFolding(obj[k], ctx)
+        obj[k] = constantFoldingObject(obj[k])
       }
       return obj
     }
@@ -69,6 +69,7 @@ export function constantFoldingTemplate(tpl: any) {
 
   const constantFoldingElement = (node: any) => {
     if (node.repeat) {
+      node.repeat = constantFoldingObject(node.repeat)
       ctx.push('_index_')
       ctx.push('_item_')
     }
