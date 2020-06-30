@@ -367,7 +367,7 @@ export function binaryCompile(tpl: any): CompilationResult {
     const style = attrs.style || {}
     for (const key in style) {
       const info = env.getStyleKeyInfo(key)
-      if (info) {
+      if (info && (info.basic || env.supportsType(obj.type))) {
         const target = info.basic ? node.styles : node.properties
         target.push({ key: info.index, value: getValueIndex(style[key], info.type) })
         delete style[key]
