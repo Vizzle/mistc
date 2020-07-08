@@ -54,13 +54,18 @@ class Context {
 export function constantFoldingTemplate(tpl: any) {
   const ctx = new Context()
 
-  const constantFoldingObject = (obj: any) => {
+  const constantFoldingObject = (obj: any, removeNulls = false) => {
     if (obj instanceof ExpressionNode) {
-      return constantFolding(obj, ctx)
+      const value = constantFolding(obj, ctx)
+      // 如果值为表达式中的 null，则移除该 key。"key": "${null}" 移除，"key": null 不移除
+      if (removeNulls && isNullExp(value)) {
+        return undefined
+      }
+      return value
     }
     else if (typeof obj === 'object') {
       for (const k in obj) {
-        obj[k] = constantFoldingObject(obj[k])
+        obj[k] = constantFoldingObject(obj[k], removeNulls)
       }
       return obj
     }
@@ -99,7 +104,7 @@ export function constantFoldingTemplate(tpl: any) {
 
     for (const key in node) {
       if (key !== 'repeat' && key !== 'vars' && key !== 'children') {
-        node[key] = constantFoldingObject(node[key])
+        node[key] = constantFoldingObject(node[key], true)
       }
     }
 
@@ -125,11 +130,15 @@ export function constantFoldingTemplate(tpl: any) {
       }
     }
     else if (key !== 'layout') {
-      tpl[key] = constantFoldingObject(tpl[key])
+      tpl[key] = constantFoldingObject(tpl[key], true)
     }
   }
 
   constantFoldingElement(tpl.layout)
+}
+
+function isNullExp(value: any) {
+  return value instanceof LiteralNode && value.value === null
 }
 
 function numberValue(value: any) {
