@@ -33,6 +33,9 @@ export async function compile(file: string, options: CompileOptions = { minify: 
   }
 
   convertExpressions(result, constants)
+
+  removeGone(result.layout)
+
   if (options.binary) {
     return compileToBinary(result)
   }
@@ -42,4 +45,23 @@ export async function compile(file: string, options: CompileOptions = { minify: 
     }
     return value
   }, options.minify ? undefined : 2)
+}
+
+function removeGone(node: any) {
+  const children = node.children
+  if (children) {
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i]
+      if (child.gone === true) {
+        children.splice(i, 1)
+        i--;
+        continue;
+      }
+      else if (child.gone === false) {
+        delete child.gone
+      }
+
+      removeGone(child)
+    }
+  }
 }
