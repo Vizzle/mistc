@@ -51,8 +51,14 @@ class Context {
  * 折叠 string, number, bool, null 常量，json 中的 null 不认为是常量
  * @param tpl 模板。模板中的表达式需要已解析为 ExpressionNode
  */
-export function constantFoldingTemplate(tpl: any) {
+export function constantFoldingTemplate(tpl: any, constants?: Record<string, any>) {
   const ctx = new Context()
+  
+  if (constants) {
+    Object.keys(constants).forEach(key => {
+      ctx.push(key, constants[key])
+    })
+  }
 
   const constantFoldingObject = (obj: any, removeNulls = false) => {
     if (obj instanceof ExpressionNode) {
@@ -235,6 +241,15 @@ function constantFolding(exp: ExpressionNode, ctx: Context): ExpressionNode {
       if (node.condition instanceof LiteralNode) {
         folded = true
         return boolValue(node.condition.value) ? (node.truePart || node.condition) : node.falsePart
+      }
+    }
+    else if (node instanceof FunctionExpressionNode) {
+      if (!node.parameters && node.target instanceof IdentifierNode) {
+        const target = ctx.get(node.target.identifier)
+        if (target && target.value && target.value[node.action.identifier]) {
+          folded = true
+          return new LiteralNode(target.value[node.action.identifier])
+        }
       }
     }
     else if (node instanceof ParenNode) {

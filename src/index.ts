@@ -22,7 +22,17 @@ interface CompileOptions {
 
 export async function compile(file: string, options: CompileOptions = { minify: false, debug: false }, content?: string) {
   const result = await inlineComponents(file, content,  { inlinedMap: {}, stack: [file], file , platform : options.platform, debug : options.debug})
-  convertExpressions(result)
+  
+  const constants: Record<string, any> = {}
+  if (options.platform) {
+    const isAndroid = options.platform === 'android'
+    constants._platform_ = isAndroid ? 'Android' : 'iOS'
+    constants.is_ios = !isAndroid
+    constants.is_android = isAndroid
+    constants.system = { name: constants._platform_ }
+  }
+
+  convertExpressions(result, constants)
   if (options.binary) {
     return compileToBinary(result)
   }

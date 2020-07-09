@@ -4,11 +4,11 @@ import { constantFoldingTemplate } from "./constantFolding"
 /**
  * 转换模板中的表达式，将 ${} 形式转换为 $: 形式。并进行一些表达式优化
  */
-export function convertExpressions(tpl: any) {
+export function convertExpressions(tpl: any, constants?: Record<string, any>) {
   tpl.noRegexExp = true
   convert(tpl)
 
-  constantFoldingTemplate(tpl)
+  constantFoldingTemplate(tpl, constants)
 }
 
 function convert(obj: any) {
