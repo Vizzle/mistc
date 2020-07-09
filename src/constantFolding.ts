@@ -1,4 +1,5 @@
-import { ExpressionNode, LiteralNode, IdentifierNode, ArrayExpressionNode, ObjectExpressionNode, ConditionalExpressionNode, UnaryExpressionNode, getUnaryOpText, BinaryExpressionNode, getBinaryOpText, SubscriptExpressionNode, FunctionExpressionNode, LambdaExpressionNode, ParenNode, UnaryOp, BinaryOp } from "./exp/parser"
+import { ExpressionNode, LiteralNode, IdentifierNode, ArrayExpressionNode, ObjectExpressionNode, ConditionalExpressionNode, UnaryExpressionNode, getUnaryOpText, BinaryExpressionNode, getBinaryOpText, SubscriptExpressionNode, FunctionExpressionNode, LambdaExpressionNode, ParenNode, UnaryOp, BinaryOp, visitNode } from "./exp/parser"
+import { relative } from "path"
 
 class Variable {
   /**
@@ -236,6 +237,50 @@ function constantFolding(exp: ExpressionNode, ctx: Context): ExpressionNode {
           default: throw new Error('unsupported unary operator')
         }
       }
+      else if (isLogicalExpression(node) && (node.operand1 instanceof LiteralNode || node.operand2 instanceof LiteralNode)) {
+        const constant = (node.operand1 instanceof LiteralNode ? node.operand1 : node.operand2) as LiteralNode
+        const another = constant === node.operand1 ? node.operand2 : node.operand1
+
+        // 一些情况转换后可能导致返回类型改变，这种情况不进行转换
+        // 例如 true && num，如果转换为 num，可能类型就从 boolean 变成 number 了
+        const canConvert = () => {
+          if (isReturnBool(another)) {
+            return true
+          }
+
+          if ((parent instanceof ConditionalExpressionNode && node === parent.condition)
+            || isLogicalExpression(parent)) {
+            return true
+          }
+
+          return false
+        }
+
+        if (node.operator === BinaryOp.And) {
+          if (boolValue(constant.value)) {
+            if (canConvert()) {
+              folded = true
+              return another
+            }
+          }
+          else if (canDeleteExpression(another)) {
+            folded = true
+            return new LiteralNode(false)
+          }
+        }
+        else if (node.operator === BinaryOp.Or) {
+          if (boolValue(constant.value)) {
+            if (canDeleteExpression(another)) {
+              folded = true
+              return new LiteralNode(true)
+            }
+          }
+          else if (canConvert()) {
+            folded = true
+            return another
+          }
+        }
+      }
     }
     else if (node instanceof ConditionalExpressionNode) {
       if (node.condition instanceof LiteralNode) {
@@ -295,6 +340,53 @@ function constantFolding(exp: ExpressionNode, ctx: Context): ExpressionNode {
 
 function shouldConstantPropagation(v: Variable) {
   return v.value !== undefined && (v.value === null || typeof v.value !== 'object')
+}
+
+function canDeleteExpression(node: ExpressionNode) {
+  // 由于历史遗留原因，Mist 中的 && 和 || 运算符不会短路，之前有业务利用这个特性来执行多个 Native 方法
+  // 所以对于有方法调用的情况，该表达式不能删除
+  let hasFunctionCall = false
+  visitNode(node, node => {
+    if (node instanceof FunctionExpressionNode && node.parameters) {
+      hasFunctionCall = true
+      return true
+    }
+  })
+
+  return !hasFunctionCall
+}
+
+function isReturnBool(node: ExpressionNode): boolean {
+  if (isLogicalExpression(node)) {
+    return true
+  }
+  else if (node instanceof BinaryExpressionNode) {
+    return node.operator === BinaryOp.Equal
+      || node.operator === BinaryOp.NotEqual
+      || node.operator === BinaryOp.EqualTriple
+      || node.operator === BinaryOp.NotEqualTriple
+      || node.operator === BinaryOp.GreaterThan
+      || node.operator === BinaryOp.GreaterOrEqual
+      || node.operator === BinaryOp.LessThan
+      || node.operator === BinaryOp.LessOrEqual
+  }
+  else if (node instanceof LiteralNode && typeof node.value === 'boolean') {
+    return true
+  }
+  else if (node instanceof ParenNode) {
+    return isReturnBool(node.expression)
+  }
+  return false
+}
+
+function isLogicalExpression(node: ExpressionNode | undefined): node is BinaryExpressionNode | UnaryExpressionNode {
+  if (node instanceof BinaryExpressionNode) {
+    return node.operator === BinaryOp.And || node.operator === BinaryOp.Or
+  }
+  else if (node instanceof UnaryExpressionNode) {
+    return node.operator === UnaryOp.Not
+  }
+  return false
 }
 
 function transformNode(node: ExpressionNode, visitor: (node: ExpressionNode, parent?: ExpressionNode) => ExpressionNode, parent?: ExpressionNode): ExpressionNode {
