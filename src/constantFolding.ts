@@ -98,7 +98,7 @@ export function constantFoldingTemplate(tpl: any, constants?: Record<string, any
         for (const key in vars) {
           ctx.push(key, vars[key])
           const v = ctx.get(key)
-          if (v && shouldConstantPropagation(v)) {
+          if (v && shouldConstantPropagation(v.value)) {
             delete vars[key]
           }
         }
@@ -188,7 +188,7 @@ function constantFolding(exp: ExpressionNode, ctx: Context): ExpressionNode {
   const transform = (exp: ExpressionNode) => transformNode(exp, (node, parent) => {
     if (node instanceof IdentifierNode) {
       const variable = ctx.get(node.identifier)
-      if (variable && shouldConstantPropagation(variable)) {
+      if (variable && shouldConstantPropagation(variable.value)) {
         folded = true
         return new LiteralNode(variable.value)
       }
@@ -291,9 +291,10 @@ function constantFolding(exp: ExpressionNode, ctx: Context): ExpressionNode {
     else if (node instanceof FunctionExpressionNode) {
       if (!node.parameters && node.target instanceof IdentifierNode) {
         const target = ctx.get(node.target.identifier)
-        if (target && target.value && target.value[node.action.identifier]) {
+        const value = target && target.value && target.value[node.action.identifier]
+        if (shouldConstantPropagation(value)) {
           folded = true
-          return new LiteralNode(target.value[node.action.identifier])
+          return new LiteralNode(value)
         }
       }
     }
@@ -338,8 +339,8 @@ function constantFolding(exp: ExpressionNode, ctx: Context): ExpressionNode {
   return exp
 }
 
-function shouldConstantPropagation(v: Variable) {
-  return v.value !== undefined && (v.value === null || typeof v.value !== 'object')
+function shouldConstantPropagation(value: any) {
+  return value !== undefined && (value === null || typeof value !== 'object')
 }
 
 function canDeleteExpression(node: ExpressionNode) {
