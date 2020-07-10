@@ -1,9 +1,10 @@
 import { Writer } from "./writer"
 import { binaryCompile, CompilationResult, Node } from "./compiler"
+import { CompileOptions } from ".."
 
-export function compileToBinary(tpl: any) {
+export function compileToBinary(tpl: any, options: CompileOptions) {
   const w = new Writer()
-  const r = binaryCompile(tpl)
+  const r = binaryCompile(tpl, options)
   // console.log(JSON.stringify(r, undefined, 2))
 
   header(w)

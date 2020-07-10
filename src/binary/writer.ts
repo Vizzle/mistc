@@ -239,7 +239,7 @@ export class Writer {
         this.writeUint8(ExpCode.NULL)
       }
       else {
-        throw new Error('不支持的常量类型')
+        throw new Error(`不支持的常量类型 ${typeof value}`)
       }
     }
     else if (node instanceof IdentifierNode) {

@@ -2,6 +2,7 @@ import { ExpressionNode, visitNode, IdentifierNode, LiteralNode, FunctionExpress
 import { BinaryEnv, KeyType } from "./defines"
 import { parseExpression, printNode } from "../convertExpressions"
 import { parseLength, parseColor } from "./utils"
+import { CompileOptions } from ".."
 
 export enum ValueType {
   None,
@@ -98,7 +99,7 @@ export interface CompilationResult {
   styles: [number, PairList][]
 }
 
-export function binaryCompile(tpl: any): CompilationResult {
+export function binaryCompile(tpl: any, options: CompileOptions): CompilationResult {
   const values: Value[] = []
   const nodes: Node[] = []
   const env = new BinaryEnv(0)
@@ -277,7 +278,20 @@ export function binaryCompile(tpl: any): CompilationResult {
   }
 
   const getValueIndex = (obj: any, type: KeyType = KeyType.Any): number => {
-    const value = createValue(obj, type)
+    let value: Value;
+    try {
+      value = createValue(obj, type)
+    }
+    catch (e) {
+      if (options.strict === false) {
+        console.error(e.message)
+      }
+      else {
+        throw e
+      }
+      value = values[0]
+    }
+
     const index = values.findIndex(v => equalsValue(v, value))
     if (index >= 0) {
       return index
@@ -365,6 +379,17 @@ export function binaryCompile(tpl: any): CompilationResult {
     delete attrs.children
 
     const style = attrs.style || {}
+
+    if (options.strict === false) {
+      const wrap = style.wrap
+      if (wrap === true) {
+        style.wrap = 'wrap'
+      }
+      else if (wrap === false) {
+        style.wrap = 'nowrap'
+      }
+    }
+
     for (const key in style) {
       const info = env.getStyleKeyInfo(key)
       if (info && (info.basic || env.supportsType(obj.type))) {

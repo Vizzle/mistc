@@ -3,7 +3,7 @@ import { compileToBinary } from './binary'
 import { convertExpressions, printNode } from './convertExpressions'
 import { ExpressionNode } from './exp/parser'
 
-interface CompileOptions {
+export interface CompileOptions {
   /**
    * 是否进行最小化处理
    */
@@ -16,6 +16,10 @@ interface CompileOptions {
    * 是否编译为二进制产物
    */
   binary?: boolean
+  /**
+   * 是否启用严格模式，严格模式下所有错误都会导致编译失败。默认开启
+   */
+  strict?: boolean
   
   debug?:boolean
 }
@@ -37,7 +41,7 @@ export async function compile(file: string, options: CompileOptions = { minify: 
   removeGone(result.layout)
 
   if (options.binary) {
-    return compileToBinary(result)
+    return compileToBinary(result, options)
   }
   return JSON.stringify(result, (_, value) => {
     if (value instanceof ExpressionNode) {

@@ -16,6 +16,7 @@ interface Options {
   checkUpdate?: boolean
   help?: boolean
   binary?: boolean
+  nonstrict?: boolean
 }
 
 function printHelp() {
@@ -120,6 +121,11 @@ function parseArgs() {
         options.binary = true
         break;
       }
+      case '-n':
+      case '--nonstrict': {
+        options.nonstrict = true
+        break;
+      }
       default: {
         if (arg[0] === '-') {
           throw new Error(`不支持的选项 \`${arg}\``)
@@ -160,7 +166,13 @@ async function main() {
   else {
     const cwd = process.cwd()
     const inputFile = path.resolve(cwd, options.file)
-    const result = await compile(inputFile, { minify: options.minify, platform: options.platform, debug: options.debug, binary: options.binary })
+    const result = await compile(inputFile, {
+      minify: options.minify,
+      platform: options.platform,
+      debug: options.debug,
+      binary: options.binary,
+      strict: !options.nonstrict
+    })
     if (options.output) {
       const outputFile = path.resolve(cwd, options.output)
       await fs.ensureFile(outputFile)
