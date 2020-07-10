@@ -29,7 +29,11 @@ export async function inlineComponents(file: string, content?: string, context: 
     const message = `${file} 检查到 ${errors.length} 个语法错误：
     ${errors.map(e => `(${e.offset}:${e.length}) ${jsonc.printParseErrorCode(e.error)}`).join('\n')}`
     throw new Error(message)
-  } 
+  }
+
+  if (!tpl.layout) {
+    throw new Error('模板格式错误，没找到 layout 属性')
+  }
 
   if (context.platform) {
     const pathName = path.dirname(file);
@@ -47,9 +51,7 @@ export async function inlineComponents(file: string, content?: string, context: 
     }
   }
 
-  if (tpl.layout) {
-    await visitNode(tpl.layout, context)
-  }
+  await visitNode(tpl.layout, context)
 
   context.inlinedMap[file] = tpl
 
