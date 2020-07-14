@@ -185,12 +185,14 @@ function equalsValue(v1: any, v2: any): boolean {
 
 function constantFolding(exp: ExpressionNode, ctx: Context): ExpressionNode {
   let folded = false
-  const transform = (exp: ExpressionNode) => transformNode(exp, (node, parent) => {
+  const transform = (exp: ExpressionNode) => transformNode(exp, (node, parent, lambdaParameters) => {
     if (node instanceof IdentifierNode) {
-      const variable = ctx.get(node.identifier)
-      if (variable && shouldConstantPropagation(variable.value)) {
-        folded = true
-        return new LiteralNode(variable.value)
+      if (lambdaParameters.indexOf(node.identifier) < 0) {
+        const variable = ctx.get(node.identifier)
+        if (variable && shouldConstantPropagation(variable.value)) {
+          folded = true
+          return new LiteralNode(variable.value)
+        }
       }
     }
     else if (node instanceof UnaryExpressionNode) {
@@ -290,11 +292,13 @@ function constantFolding(exp: ExpressionNode, ctx: Context): ExpressionNode {
     }
     else if (node instanceof FunctionExpressionNode) {
       if (!node.parameters && node.target instanceof IdentifierNode) {
-        const target = ctx.get(node.target.identifier)
-        const value = target && target.value && target.value[node.action.identifier]
-        if (shouldConstantPropagation(value)) {
-          folded = true
-          return new LiteralNode(value)
+        if (lambdaParameters.indexOf(node.target.identifier) < 0) {
+          const target = ctx.get(node.target.identifier)
+          const value = target && target.value && target.value[node.action.identifier]
+          if (shouldConstantPropagation(value)) {
+            folded = true
+            return new LiteralNode(value)
+          }
         }
       }
     }
@@ -390,10 +394,14 @@ function isLogicalExpression(node: ExpressionNode | undefined): node is BinaryEx
   return false
 }
 
-function transformNode(node: ExpressionNode, visitor: (node: ExpressionNode, parent?: ExpressionNode) => ExpressionNode, parent?: ExpressionNode): ExpressionNode {
-  node = visitor(node, parent)
+function transformNode(node: ExpressionNode, visitor: (node: ExpressionNode, parent: ExpressionNode | undefined, lambdaParameters: string[]) => ExpressionNode, parent?: ExpressionNode, lambdaParameters: string[] = []): ExpressionNode {
+  if (node instanceof LambdaExpressionNode) {
+    node.parameters.forEach(p => lambdaParameters.push(p.identifier))
+  }
 
-  const transform = (n: ExpressionNode) => transformNode(n, visitor, node)
+  node = visitor(node, parent, lambdaParameters)
+
+  const transform = (n: ExpressionNode) => transformNode(n, visitor, node, lambdaParameters)
 
   if (node instanceof LiteralNode) {
     
@@ -438,6 +446,10 @@ function transformNode(node: ExpressionNode, visitor: (node: ExpressionNode, par
   }
   else if (node instanceof ParenNode) {
     node.expression = transform(node.expression)
+  }
+
+  if (node instanceof LambdaExpressionNode) {
+    node.parameters.forEach(() => lambdaParameters.pop())
   }
 
   return node
