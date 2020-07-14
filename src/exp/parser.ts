@@ -386,17 +386,30 @@ export class FunctionExpressionNode extends ExpressionNode {
 }
 
 export class LambdaExpressionNode extends ExpressionNode {
-    parameter: IdentifierNode;
+    parameters: IdentifierNode[];
     expression: ExpressionNode;
 
-    constructor(parameter: IdentifierNode, expression: ExpressionNode) {
+    constructor(parameters: IdentifierNode[], expression: ExpressionNode) {
         super();
-        this.parameter = parameter;
+        this.parameters = parameters;
         this.expression = expression;
     }
     
     childNodes(): ExpressionNode[] {
         return [this.expression]
+    }
+}
+
+export class CommaExpressionNode extends ExpressionNode {
+    expressions: ExpressionNode[];
+
+    constructor(expressions: ExpressionNode[]) {
+        super();
+        this.expressions = expressions;
+    }
+
+    childNodes(): ExpressionNode[] {
+        return this.expressions;
     }
 }
 
@@ -697,7 +710,37 @@ export class Parser {
             {
                 let open = this.lexer.token;
                 this.lexer.next();
+                if (this.lexer.token.type === TokenType.CloseParen) {
+                    this.lexer.lookAhead();
+                    if (this.lexer.lookAheadToken.type === TokenType.Arrow) {
+                        this.lexer.next();
+                        this.lexer.next();
+                        if (!(expression = this.requireExpression())) return null;
+                        return new LambdaExpressionNode([], expression).setRange(open.offset, expression.offset + expression.length - open.offset);
+                    }
+                    else {
+                        if (!this.error) this.error = ParserErrorCode.ExpressionExpected;
+                        return null
+                    }
+                }
                 if (!(expression = this.requireExpression())) return null;
+                if (this.lexer.token.type === TokenType.Comma) {
+                    const expressions = [expression]
+                    do {
+                        this.lexer.next();
+                        if (!(expression = this.requireExpression())) return null;
+                        expressions.push(expression)
+                    } while (this.lexer.token.type === TokenType.Comma)
+                    let close = this.requireOperator(TokenType.CloseParen, ParserErrorCode.CloseParenExpected)
+                    if (!close) return null;
+                    
+                    if (expressions.every(exp => exp instanceof IdentifierNode) && this.lexer.token.type === TokenType.Arrow) {
+                        this.lexer.next();
+                        if (!(expression = this.requireExpression())) return null;
+                        return new LambdaExpressionNode(expressions as IdentifierNode[], expression).setRange(open.offset, expression.offset + expression.length - open.offset);
+                    }
+                    return new CommaExpressionNode(expressions).setRange(open.offset, close.offset + close.length - open.offset)
+                }
                 let close = this.requireOperator(TokenType.CloseParen, ParserErrorCode.CloseParenExpected)
                 if (!close) return null;
                 return new ParenNode(expression).setRange(open.offset, close.offset + close.length - open.offset);
@@ -747,7 +790,7 @@ export class Parser {
                 }
                 else if (this.parseOperator(TokenType.Arrow)) {
                     if (!(expression = this.requireExpression())) return null;
-                    return new LambdaExpressionNode(identifier, expression).setRange(identifier.offset, expression.offset + expression.length - identifier.offset);
+                    return new LambdaExpressionNode([identifier], expression).setRange(identifier.offset, expression.offset + expression.length - identifier.offset);
                 }
                 return identifier;
             }

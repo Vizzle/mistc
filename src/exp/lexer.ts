@@ -164,6 +164,7 @@ export class Lexer {
     public line: number;
     public error: LexerErrorCode;
     public token: Token;
+    public lookAheadToken: Token;
 
     public constructor(source: string) {
         this.source = source;
@@ -172,6 +173,7 @@ export class Lexer {
         this.error = LexerErrorCode.None;
         this.pointer = -1;
         this.token = new Token()
+        this.lookAheadToken = new Token()
         this._nextChar();
     }
 
@@ -180,13 +182,28 @@ export class Lexer {
     }
 
     public next() {
-        this.token = new Token();
-        this.token.type = this._next();
-        this.token.length = this.pointer - this.token.offset;
-        if (this.error) {
-            this.token.type = TokenType.None;
+        if (this.lookAheadToken.type !== TokenType.None) {
+            this.token = this.lookAheadToken
+            this.lookAheadToken = new Token()
+        }
+        else {
+            this.token = new Token();
+            this.token.type = this._next();
+            this.token.length = this.pointer - this.token.offset;
+            if (this.error) {
+                this.token.type = TokenType.None;
+            }
         }
         return this.token.type !== TokenType.None;
+    }
+
+    public lookAhead() {
+        this.lookAheadToken = new Token()
+        this.lookAheadToken.type = this._next(this.lookAheadToken);
+        this.lookAheadToken.length = this.pointer - this.lookAheadToken.offset;
+        if (this.error) {
+            this.lookAheadToken.type = TokenType.None;
+        }
     }
 
     public static allTokens(source: string, tokens: any[]) {
@@ -214,9 +231,9 @@ export class Lexer {
         this.line++;
     }
 
-    private _next(): TokenType {
+    private _next(token: Token = this.token): TokenType {
         for (;;) {
-            this.token.offset = this.pointer;
+            token.offset = this.pointer;
             
             let c = this.c;
             switch (c) {
@@ -387,19 +404,19 @@ export class Lexer {
                         let len = this.pointer - start;
                         let str = this.source.substr(start, len);
                         if (str === 'null' || str === 'nil') {
-                            this.token.value = null;
+                            token.value = null;
                             return TokenType.Null;
                         }
                         else if (str === 'true') {
-                            this.token.value = true;
+                            token.value = true;
                             return TokenType.Boolean;
                         }
                         else if (str === 'false') {
-                            this.token.value = false;
+                            token.value = false;
                             return TokenType.Boolean;
                         }
                         else {
-                            this.token.value = str;
+                            token.value = str;
                             return TokenType.Id;
                         }
                     } else if (isdigit(this.c)) {

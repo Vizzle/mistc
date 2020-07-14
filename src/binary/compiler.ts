@@ -312,7 +312,7 @@ export function binaryCompile(tpl: any, options: CompileOptions): CompilationRes
           strings.push(node.action.identifier)
         }
         else if (node instanceof LambdaExpressionNode) {
-          strings.push(node.parameter.identifier)
+          node.parameters.forEach(exp => strings.push(exp.identifier))
         }
       })
       

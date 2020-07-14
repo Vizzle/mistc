@@ -154,7 +154,10 @@ export function printNode(node: ExpressionNode | null | undefined, prettyPrint: 
     }
   }
   else if (node instanceof LambdaExpressionNode) {
-    return p(node.parameter) + `${space}->${space}` + p(node.expression)
+    if (node.parameters.length === 1) {
+      return p(node.parameters[0]) + `${space}->${space}` + p(node.expression)
+    }
+    return '(' + node.parameters.map(p => printNode(p)).join(',' + space) + ')' + `${space}->${space}` + p(node.expression)
   }
   else if (node instanceof ParenNode) {
     return '(' + p(node.expression) + ')'

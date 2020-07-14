@@ -1,5 +1,5 @@
 import { Value, ValueType, Length, ActionList, Expression, PairList, Unit } from "./compiler"
-import { ExpressionNode, LiteralNode, IdentifierNode, ArrayExpressionNode, ObjectExpressionNode, ConditionalExpressionNode, UnaryExpressionNode, getUnaryOpText, BinaryExpressionNode, getBinaryOpText, SubscriptExpressionNode, FunctionExpressionNode, LambdaExpressionNode, ParenNode, UnaryOp, BinaryOp } from "../exp/parser"
+import { ExpressionNode, LiteralNode, IdentifierNode, ArrayExpressionNode, ObjectExpressionNode, ConditionalExpressionNode, UnaryExpressionNode, getUnaryOpText, BinaryExpressionNode, getBinaryOpText, SubscriptExpressionNode, FunctionExpressionNode, LambdaExpressionNode, ParenNode, UnaryOp, BinaryOp, CommaExpressionNode } from "../exp/parser"
 import { TextEncoder } from "util"
 
 enum ExpCode {
@@ -9,12 +9,13 @@ enum ExpCode {
   STR,    // [uint16] ref of value chunk
   BOOL,   // [int8]
   NULL,   // []
-  ARR,    // [uint32, exps]
-  OBJ,    // [uint32, key_values]
+  ARR,    // [uint16, exps]
+  OBJ,    // [uint16, key_values]
   ID,     // [uint8, chars]
   FUNC,   // [uint8, id[uint8, chars], target_exp, param_exps]
   COND,   // [cond_exp, true_exp, false_exp]
   LAMBDA, // [uint8, param_ids, exp]
+  COMMA,  // [uint8, exps]
 
   // [exp1]  unary operators
   NEG = 50, // -
@@ -314,12 +315,21 @@ export class Writer {
     }
     else if (node instanceof LambdaExpressionNode) {
       this.writeUint8(ExpCode.LAMBDA)
-      this.writeUint8(1)
-      writeString(node.parameter.identifier)
+      this.writeUint8(node.parameters.length)
+      for (const p of node.parameters) {
+        writeString(p.identifier)
+      }
       writeExpBin(node.expression)
     }
     else if (node instanceof ParenNode) {
       writeExpBin(node.expression)
+    }
+    else if (node instanceof CommaExpressionNode) {
+      this.writeUint8(ExpCode.COMMA)
+      this.writeUint8(node.expressions.length)
+      for (const exp of node.expressions) {
+        writeExpBin(exp)
+      }
     }
     else {
       throw new Error(`unknown node`)
