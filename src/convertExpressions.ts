@@ -26,10 +26,14 @@ function convert(obj: any) {
 const expRE = /\$\{.*?\}/
 
 function containsExp(str: string) {
-  return expRE.test(str)
+  return str.startsWith('$:') || expRE.test(str)
 }
 
 function convertExp(str: string) {
+  if (str.startsWith('$:')) {
+    return parseExpression(str.slice(2))
+  }
+
   let startIndex = str.indexOf('${')
   if (startIndex >= 0) {
     let endIndex = str.indexOf('}', startIndex + 2)
