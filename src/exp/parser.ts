@@ -694,7 +694,7 @@ export class Parser {
     }
 
     private parsePrimaryExpression() {
-        let expression: ExpressionNode | null;
+        let expression: ExpressionNode | null = null;
         let type = this.lexer.token.type;
         switch (type) {
             case TokenType.String:
@@ -710,40 +710,38 @@ export class Parser {
             {
                 let open = this.lexer.token;
                 this.lexer.next();
-                if (this.lexer.token.type === TokenType.CloseParen) {
-                    this.lexer.lookAhead();
-                    if (this.lexer.lookAheadToken.type === TokenType.Arrow) {
-                        this.lexer.next();
-                        this.lexer.next();
-                        if (!(expression = this.requireExpression())) return null;
-                        return new LambdaExpressionNode([], expression).setRange(open.offset, expression.offset + expression.length - open.offset);
-                    }
-                    else {
-                        if (!this.error) this.error = ParserErrorCode.ExpressionExpected;
-                        return null
-                    }
-                }
-                if (!(expression = this.requireExpression())) return null;
-                if (this.lexer.token.type === TokenType.Comma) {
-                    const expressions = [expression]
-                    do {
+                const expressions: ExpressionNode[] = []
+                if (this.lexer.token.type !== TokenType.CloseParen) {
+                    if (!(expression = this.requireExpression())) return null;
+                    expressions.push(expression)
+                    while (this.lexer.token.type === TokenType.Comma) {
                         this.lexer.next();
                         if (!(expression = this.requireExpression())) return null;
                         expressions.push(expression)
-                    } while (this.lexer.token.type === TokenType.Comma)
-                    let close = this.requireOperator(TokenType.CloseParen, ParserErrorCode.CloseParenExpected)
-                    if (!close) return null;
-                    
-                    if (expressions.every(exp => exp instanceof IdentifierNode) && this.lexer.token.type === TokenType.Arrow) {
-                        this.lexer.next();
-                        if (!(expression = this.requireExpression())) return null;
-                        return new LambdaExpressionNode(expressions as IdentifierNode[], expression).setRange(open.offset, expression.offset + expression.length - open.offset);
                     }
+                }
+
+                const close = this.requireOperator(TokenType.CloseParen, ParserErrorCode.CloseParenExpected)
+                if (!close) return null;
+
+                if (this.lexer.token.type === TokenType.Arrow && expressions.every(exp => exp instanceof IdentifierNode)) {
+                    this.lexer.next();
+                    if (!(expression = this.requireExpression())) return null;
+                    return new LambdaExpressionNode(expressions as IdentifierNode[], expression).setRange(open.offset, expression.offset + expression.length - open.offset);
+                }
+
+                if (expressions.length > 1) {
                     return new CommaExpressionNode(expressions).setRange(open.offset, close.offset + close.length - open.offset)
                 }
-                let close = this.requireOperator(TokenType.CloseParen, ParserErrorCode.CloseParenExpected)
-                if (!close) return null;
-                return new ParenNode(expression).setRange(open.offset, close.offset + close.length - open.offset);
+                else if (expression) {
+                    return new ParenNode(expression).setRange(open.offset, close.offset + close.length - open.offset);
+                }
+                else {
+                    if (!this.error) {
+                        this.error = ParserErrorCode.ExpressionExpected
+                    }
+                    return null
+                }
             }
             case TokenType.OpenBracket:
             {
