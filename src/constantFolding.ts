@@ -291,14 +291,40 @@ function constantFolding(exp: ExpressionNode, ctx: Context): ExpressionNode {
       }
     }
     else if (node instanceof FunctionExpressionNode) {
-      if (!node.parameters && node.target instanceof IdentifierNode) {
-        if (lambdaParameters.indexOf(node.target.identifier) < 0) {
-          const target = ctx.get(node.target.identifier)
-          const value = target?.value?.[node.action.identifier]
-          if (shouldConstantPropagation(value)) {
-            folded = true
-            return new LiteralNode(value)
+      if (!node.parameters) {
+        let targetValue = undefined
+        if (node.target instanceof IdentifierNode) {
+          if (lambdaParameters.indexOf(node.target.identifier) < 0) {
+            targetValue = ctx.get(node.target.identifier)?.value
           }
+        }
+        else if (node.target instanceof LiteralNode) {
+          targetValue = node.target.value
+        }
+
+        let value = undefined
+        if (targetValue instanceof Array) {
+          if (node.action.identifier === 'count') {
+            value = targetValue.length
+          }
+        }
+        else if (typeof targetValue === 'string') {
+          if (node.action.identifier === 'length') {
+            value = targetValue.length
+          }
+        }
+        else if (targetValue !== null && typeof targetValue === 'object') {
+          if (node.action.identifier === 'count') {
+            value = Object.keys(targetValue).length
+          }
+          else {
+            value = targetValue[node.action.identifier]
+          }
+        }
+
+        if (shouldConstantPropagation(value)) {
+          folded = true
+          return new LiteralNode(value)
         }
       }
     }
@@ -344,7 +370,8 @@ function constantFolding(exp: ExpressionNode, ctx: Context): ExpressionNode {
 }
 
 function shouldConstantPropagation(value: any) {
-  return value !== undefined && (value === null || typeof value !== 'object')
+  const type = typeof value
+  return value === null || type === 'boolean' || type === 'string' || type === 'number'
 }
 
 function canDeleteExpression(node: ExpressionNode) {
