@@ -294,7 +294,7 @@ function constantFolding(exp: ExpressionNode, ctx: Context): ExpressionNode {
       if (!node.parameters && node.target instanceof IdentifierNode) {
         if (lambdaParameters.indexOf(node.target.identifier) < 0) {
           const target = ctx.get(node.target.identifier)
-          const value = target && target.value && target.value[node.action.identifier]
+          const value = target?.value?.[node.action.identifier]
           if (shouldConstantPropagation(value)) {
             folded = true
             return new LiteralNode(value)
