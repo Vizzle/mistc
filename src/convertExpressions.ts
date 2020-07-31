@@ -1,4 +1,4 @@
-import { ExpressionNode, LiteralNode, IdentifierNode, ArrayExpressionNode, ObjectExpressionNode, ConditionalExpressionNode, UnaryExpressionNode, getUnaryOpText, BinaryExpressionNode, getBinaryOpText, SubscriptExpressionNode, FunctionExpressionNode, LambdaExpressionNode, ParenNode, Parser, compareBinaryOperatorPriority, BinaryOp } from "./exp/parser"
+import { ExpressionNode, LiteralNode, IdentifierNode, ArrayExpressionNode, ObjectExpressionNode, ConditionalExpressionNode, UnaryExpressionNode, getUnaryOpText, BinaryExpressionNode, getBinaryOpText, SubscriptExpressionNode, FunctionExpressionNode, LambdaExpressionNode, ParenNode, Parser, compareBinaryOperatorPriority, BinaryOp, CommaExpressionNode } from "./exp/parser"
 import { constantFoldingTemplate } from "./constantFolding"
 
 /**
@@ -165,6 +165,9 @@ export function printNode(node: ExpressionNode | null | undefined, prettyPrint: 
   }
   else if (node instanceof ParenNode) {
     return '(' + p(node.expression) + ')'
+  }
+  else if (node instanceof CommaExpressionNode) {
+    return '(' + node.expressions.map(n => p(n)).join(`,${space}`) + ')'
   }
 
   throw new Error('unknown node')
