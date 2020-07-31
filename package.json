@@ -1,6 +1,6 @@
 {
   "name": "mistc",
-  "version": "1.0.6-beta.5",
+  "version": "1.0.6-beta.6",
   "description": "compiler for mist templates",
   "main": "out/index.js",
   "types": "out/index.d.ts",
