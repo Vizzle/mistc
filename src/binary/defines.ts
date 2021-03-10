@@ -98,6 +98,14 @@ const KEYS: [string, number, KeyType, boolean?][] = [
   ["content-mode", 71, KeyType.Enum],
   ["wrap", 74, KeyType.Enum],
   ["items-per-line", 75, KeyType.Number],
+  ["border-left-width", 76, KeyType.Length, true],
+  ["border-top-width", 77, KeyType.Length, true],
+  ["border-right-width", 78, KeyType.Length, true],
+  ["border-bottom-width", 79, KeyType.Length, true],
+  ["border-left-color", 80, KeyType.Length, true],
+  ["border-top-color", 81, KeyType.Length, true],
+  ["border-right-color", 82, KeyType.Length, true],
+  ["border-bottom-color", 83, KeyType.Length, true],
 ]
 
 /**
@@ -213,7 +221,7 @@ ${ENUMS.map(k => `    MSBNodeEnum_${convertKey(k[0])} = ${k[1]},`).join('\n')}
 */
 
 /* Android 枚举定义代码。取消注释以下代码后执行本文件即可输出 */
-/*
+
 ;(function () {
   const convertKey = (k: string) => k.replace(/-/g, '_')
 
@@ -224,7 +232,7 @@ ${ENUMS.map(k => `public static final int NODE_ENUM_${convertKey(k[0])} = ${k[1]
 `
   console.log(code)
 })()
-*/
+
 
 function check() {
   const allKeys = [...OUTER_KEYS, ...KEYS]
