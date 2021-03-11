@@ -360,14 +360,17 @@ export function binaryCompile(tpl: any, options: CompileOptions): CompilationRes
       let vars: any = {}
       if (obj.vars instanceof Array) {
         for (const v of obj.vars) {
-          vars = { ...vars, ...v }
+          // vars = { ...vars, ...v }
+          for (const key in v) {
+            node.vars.push({ key: getValueIndex(key), value: getValueIndex(v[key]) })
+          }
         }
       }
       else {
         vars = obj.vars
-      }
-      for (const key in vars) {
-        node.vars.push({ key: getValueIndex(key), value: getValueIndex(vars[key]) })
+        for (const key in vars) {
+          node.vars.push({ key: getValueIndex(key), value: getValueIndex(vars[key]) })
+        }
       }
     }
 
