@@ -1,0 +1,36 @@
+{
+  "data": {
+    "item": {
+      "title": "标题",
+      "content": "内容"
+    }
+  },
+  "layout": {
+    "children": [
+      {
+        "vars": {
+          "title": "$:item.title"
+        },
+        "style": {
+          "direction": "vertical"
+        },
+        "children": [
+          {
+            "type": "text",
+            "style": {
+              "text": "$:title",
+              "font-size": 18
+            }
+          },
+          {
+            "type": "text",
+            "style": {
+              "text": "content"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "noRegexExp": true
+}
